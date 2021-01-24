@@ -1,0 +1,2 @@
+debug=true
+log=true

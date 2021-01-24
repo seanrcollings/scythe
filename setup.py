@@ -23,5 +23,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.9",
-    # entry_points={"console_scripts": ["venture = venture.__main__:main"]},
+    entry_points={"console_scripts": ["scythe = scythe.cli:cli"]},
 )
