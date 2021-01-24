@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[dev-packages]
+pylint = "*"
+black = "20.8b1"
+httpie = "*"
+mypy = "*"
+
+[packages]
+arc-cli = "*"
+scythe = {editable = true, path = "."}
+
+[requires]
+python_version = "3.9"
+
+[pipenv]
+allow_prereleases = true
