@@ -1,5 +1,5 @@
 import datetime
-import shutil
+from collections import namedtuple
 
 from arc import CLI, Utility
 from arc.errors import ExecutionError
@@ -13,7 +13,8 @@ from .selection_menu import SelectionMenu
 from . import helpers
 
 
-config = utils.load_file(config_file)
+Config = namedtuple("Config", ["token", "account_id", "user_id"])
+config = Config(**utils.load_file(config_file))
 cache = utils.Cache(cache_file)
 
 
@@ -23,7 +24,7 @@ cli = CLI(utilities=[debug, timer])
 if config_file.exists():
     # Any scripts that need access should use
     # the @utils.config_required decorator
-    api = HarvestApi(config["token"], config["account_id"])
+    api = HarvestApi(config.token, config.account_id)
 
 
 @cli.script()
@@ -77,7 +78,7 @@ def whoami():
 @utils.config_required
 def list_projects():
     """Lists all of the user's projects and each project's tasks"""
-    projects = api.get_projects(config["user_id"]).json()["project_assignments"]
+    projects = api.get_projects(config.user_id).json()["project_assignments"]
     projects = helpers.Project.from_list(projects)
 
     for idx, project in enumerate(projects):
@@ -93,7 +94,7 @@ def create():
     """Used to create a timer
     Starts the timer as well
     """
-    projects = api.get_projects(config["user_id"]).json()["project_assignments"]
+    projects = api.get_projects(config.user_id).json()["project_assignments"]
     projects = helpers.Project.from_list(projects)
 
     project_idx, _ = SelectionMenu([project.name for project in projects]).render()
@@ -129,39 +130,33 @@ def create():
 @timer.script("restart")
 @utils.config_required
 def start():
-    """Start a previously created timer"""
+    """Start a previously created timer."""
     print("Fetching timers from today...")
     entries = api.get(f"/time_entries?from={datetime.date.today()}").json()[
         "time_entries"
     ]
+
     entries = helpers.TimeEntry.from_list(entries)
-    columns = shutil.get_terminal_size((50, 20)).columns - 6
-    entry_names = [
-        f"{entry.hours} - {entry.project['name']} - {entry.task['name']} "
-        f"\n{utils.paragraphize(entry.notes, length=columns, beginning=' |  ')}"
-        for entry in entries
-    ]
+    entry_idx, _ = utils.pick_time_entry(entries)
+    entry_id = entries[entry_idx].id
+    cache.write(entry_id=entry_id)
 
-    entry_idx, _ = SelectionMenu(entry_names).render()
-    entry = entries[entry_idx]
-
-    res = api.patch(f"/time_entries/{entry.id}/restart")
+    res = api.patch(f"/time_entries/{entry_id}/restart")
     utils.print_valid_response(res, "Timer Started!")
 
 
 @timer.script()
 @utils.config_required
-def stop(check: bool):
+def stop(force: bool):
     """Stopes a running timer.
     Will first attempt to look in the cache
     for ENTRY_ID and run a call to stop that timer. If that cache entry
     is not found, then it will call the API to check for running timers
     Arguments:
-    --check   forces it to call the API, regardless of what is in the cache
+    --force   forces it to call the API, regardless of what is in the cache
     """
-    entry_id = cache.read("entry_id")
 
-    if not entry_id or check:
+    if not (entry_id := cache.read("entry_id")) or force:
         print("Checking Harvest for running timers...")
         entry = api.get_running_timer()
         if not entry:
@@ -174,3 +169,21 @@ def stop(check: bool):
         f"/time_entries/{entry_id}/stop",
     )
     utils.print_valid_response(res, "Timer Stopped!")
+    cache.write(entry_id=entry_id)
+
+
+@timer.script()
+@utils.config_required
+def delete():
+    """Used to close a timer from today"""
+    print("Fetching timers from today...")
+    entries = api.get(f"/time_entries?from={datetime.date.today()}").json()[
+        "time_entries"
+    ]
+
+    entries = helpers.TimeEntry.from_list(entries)
+    entry_idx, _ = utils.pick_time_entry(entries)
+    entry = entries[entry_idx]
+
+    res = api.delete(f"/time_entries/{entry.id}")
+    utils.print_valid_response(res, "Timer Deleted")

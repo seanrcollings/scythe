@@ -137,10 +137,9 @@ class SelectionMenu:
 
     def render(self):
         selected_index = 0
-        move = len(self.options)
 
+        clear()
         while True:
-            clear()
             home_pos()
             print(f"Press {fg.YELLOW}q{effects.CLEAR} to quit at any time")
             for index, string in enumerate(self.options):
@@ -152,8 +151,7 @@ class SelectionMenu:
             char = ord(getch())
 
             if char == q:
-                Move.down(1)
-                print("Stop!")
+                print("Quitting")
                 sys.exit(0)
 
             elif char in NUMBERS:

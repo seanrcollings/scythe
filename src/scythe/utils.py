@@ -2,10 +2,12 @@ from typing import Dict
 from pathlib import Path
 import functools
 from textwrap import wrap
+import shutil
 
 import requests
 from arc.errors import ExecutionError
 from . import config_file
+from .selection_menu import SelectionMenu
 
 
 def config_required(func):
@@ -71,3 +73,15 @@ def paragraphize(string: str, length: int = 70, beginning: str = ""):
     if len(string) == 0:
         return ""
     return beginning + f"\n{beginning}".join(wrap(string, length)) + "\n"
+
+
+def pick_time_entry(entries: list):
+
+    columns = shutil.get_terminal_size((50, 20)).columns - 6
+    entry_names = [
+        f"{entry.hours} - {entry.project['name']} - {entry.task['name']} "
+        f"\n{paragraphize(entry.notes, length=columns, beginning=' |  ')}"
+        for entry in entries
+    ]
+
+    return SelectionMenu(entry_names).render()
