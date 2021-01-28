@@ -1,11 +1,11 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict
 from pathlib import Path
 import functools
 
 import requests
 from arc.errors import ExecutionError
-from arc.color import effects, fg
-from . import config_file, cache_file
+from arc.color import fg
+from . import config_file
 
 
 def config_required(func):
@@ -34,27 +34,21 @@ def load_file(file: Path) -> Dict[str, str]:
     return data
 
 
-def print_assignments(assignments: List[Dict[str, Any]], show_tasks: bool = False):
-    for idx, assignment in enumerate(assignments):
-        print(
-            f"{effects.BOLD}{fg.GREEN}({idx}) "
-            f"{assignment['project']['name']}{effects.CLEAR}"
-        )
-
-        if show_tasks:
-            for idx, task_assignment in enumerate(assignment["task_assignments"]):
-                print(f"\t({idx}) {task_assignment['task']['name']}")
-
-
-def handle_response(res: requests.Response, worked: str):
+def handle_response(res: requests.Response):
     if res.status_code >= 200 or res.status_code < 300:
+        return True
+
+    raise ExecutionError(f"Request failed with the following message: {res.text}")
+
+
+def print_valid_response(res: requests.Response, worked: str):
+    if handle_response(res):
         print(worked)
-    else:
-        print(f"Request failed with the following message: {res.text}")
 
 
 class Cache:
     def __init__(self, file: Path):
+        self.cache_file = file
         self.cache_data = load_file(file)
 
     def read(self, key: str):
@@ -65,7 +59,7 @@ class Cache:
         self.__write()
 
     def __write(self):
-        with cache_file.open("w+") as file:
+        with self.cache_file.open("w+") as file:
             file.write(
                 "\n".join(
                     f"{key.upper()}={value}" for key, value in self.cache_data.items()

@@ -9,6 +9,8 @@ from arc.utilities.debug import debug
 from . import config_file, cache_file
 from .harvest_api import HarvestApi
 from . import utils
+from .selection_menu import SelectionMenu
+from .helpers.project import Project
 
 
 config = utils.load_file(config_file)
@@ -18,19 +20,25 @@ cache = utils.Cache(cache_file)
 timer = Utility("timer")
 cli = CLI(utilities=[debug, timer])
 
+if config_file.exists():
+    # Any scripts that need access should use
+    # the @utils.config_required decorator
+    api = HarvestApi(config["token"], config["account_id"])
+
 
 @cli.script()
 def init(token: str, accid: int):
     """Used to write your Harvest
     ID and Access Token to the configuration file
-    params:
+
+    Arguments:
     token=TOKEN Harvest Account token generated at https://id.getharvest.com/developers
     accid=ID Harvest Account ID to be sent with every request
     """
     print("Checking a call can be made with the provided data...")
-    api = HarvestApi(token, accid)
-    res = api.me()
-    # use the result to also store the user id :)
+    init_api = HarvestApi(token, accid)
+    res = init_api.me()
+
     if res.status_code != 200:
         raise ExecutionError(
             f"{fg.RED.bright}Error!{effects.CLEAR} The api returned a "
@@ -58,58 +66,48 @@ def init(token: str, accid: int):
 @timer.script("list")
 @utils.config_required
 def list_projects():
-    api = HarvestApi(config["token"], config["account_id"])
-    assignments = api.get(f"/users/{config['user_id']}/project_assignments").json()[
-        "project_assignments"
-    ]
+    projects = api.get_projects(config["user_id"]).json()["project_assignments"]
+    projects = Project.from_list(projects)
 
-    utils.print_assignments(assignments, show_tasks=True)
+    for idx, project in enumerate(projects):
+        print(f"{effects.BOLD}{fg.GREEN}({idx}) {project.name}{effects.CLEAR}")
+
+        for task_idx, task in enumerate(project.tasks):
+            print(f"\t({task_idx}) {task.name}")
 
 
 @timer.script()
 @utils.config_required
 def start():
-    api = HarvestApi(config["token"], config["account_id"])
-    assignments = api.get(f"/users/{config['user_id']}/project_assignments").json()[
-        "project_assignments"
-    ]
+    projects = api.get_projects(config["user_id"]).json()["project_assignments"]
+    projects = Project.from_list(projects)
 
-    utils.print_assignments(assignments, show_tasks=True)
-    validated_input = None
-    while not validated_input:
-        print(
-            effects.UNDERLINE,
-            "Select the project and task to start a timer (i.e. 1, 1)",
-            effects.CLEAR,
-            sep="",
-        )
-        user_input = input(">>> ")
-        # regex match input here
-        # Try catch block here
-        validated_input = tuple(int(value) for value in user_input.split(","))
+    project_idx, _ = SelectionMenu([project.name for project in projects]).render()
+    print()
 
-    project_idx, task_idx = validated_input
+    project = projects[project_idx]
 
-    print(f"Project: {assignments[project_idx]['project']['name']}")
-    print(
-        f"Task: {assignments[project_idx]['task_assignments'][task_idx]['task']['name']}"
-    )
+    task_idx, _ = SelectionMenu([task.name for task in project.tasks]).render()
+    print()
+
+    task = project.tasks[task_idx]
+
+    print(f"{effects.BOLD}Project{effects.CLEAR}: {project.name}")
+    print(f"{effects.BOLD}Task{effects.CLEAR}: {task.name}")
 
     note = input("Note: ")
 
     res = api.post(
         "/time_entries",
         {
-            "project_id": assignments[project_idx]["project"]["id"],
-            "task_id": assignments[project_idx]["task_assignments"][task_idx]["task"][
-                "id"
-            ],
+            "project_id": project.id,
+            "task_id": task.id,
             "spent_date": str(datetime.date.today()),
             "notes": note,
         },
     )
 
-    utils.handle_response(res, "Timer Started!")
+    utils.print_valid_response(res, "Timer Started!")
     cache.write(entry_id=res.json()["id"])
 
 
@@ -118,8 +116,16 @@ def start():
 def stop():
     entry_id = cache.read("entry_id")
 
-    api = HarvestApi(config["token"], config["account_id"])
+    if not entry_id:
+        print("Missed cache... Checking for running timers")
+        entry = api.get_running_timer()
+        if not entry:
+            print("No running timers")
+            return
+
+        entry_id = entry["id"]
+
     api.patch(
         f"/time_entries/{entry_id}/stop",
     )
-    print("Timer Stopped")
+    print("Timer Stopped!")

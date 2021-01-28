@@ -31,3 +31,15 @@ class HarvestApi(requests.Session):
 
     def me(self):
         return self.get("/users/me")
+
+    def get_projects(self, user_id: int) -> requests.Response:
+        return self.get(f"/users/{user_id}/project_assignments")
+
+    def get_running_timer(self):
+        timers = self.get("/time_entries").json()["time_entries"]
+        timer: dict
+        for timer in timers:
+            if timer["is_running"]:
+                return timer
+
+        return None
