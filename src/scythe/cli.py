@@ -10,7 +10,7 @@ from . import config_file, cache_file
 from .harvest_api import HarvestApi
 from . import utils
 from .selection_menu import SelectionMenu
-from .helpers.project import Project
+from . import helpers
 
 
 config = utils.load_file(config_file)
@@ -78,7 +78,7 @@ def whoami():
 def list_projects():
     """Lists all of the user's projects and each project's tasks"""
     projects = api.get_projects(config["user_id"]).json()["project_assignments"]
-    projects = Project.from_list(projects)
+    projects = helpers.Project.from_list(projects)
 
     for idx, project in enumerate(projects):
         print(f"{effects.BOLD}{fg.GREEN}({idx}) {project.name}{effects.CLEAR}")
@@ -89,10 +89,12 @@ def list_projects():
 
 @timer.script()
 @utils.config_required
-def start():
-    """Used to start a timer"""
+def create():
+    """Used to create a timer
+    Starts the timer as well
+    """
     projects = api.get_projects(config["user_id"]).json()["project_assignments"]
-    projects = Project.from_list(projects)
+    projects = helpers.Project.from_list(projects)
 
     project_idx, _ = SelectionMenu([project.name for project in projects]).render()
     print()
@@ -125,6 +127,27 @@ def start():
 
 @timer.script()
 @utils.config_required
+def start():
+    """Start a previously created timer"""
+    print("Fetching timers from today...")
+    entries = api.get(f"/time_entries?from={datetime.date.today()}").json()[
+        "time_entries"
+    ]
+    entries = helpers.TimeEntry.from_list(entries)
+    entry_names = [
+        f"{entry.hours} - {entry.project['name']} - {entry.task['name']} - {entry.notes}"
+        for entry in entries
+    ]
+
+    entry_idx, _ = SelectionMenu(entry_names).render()
+    entry = entries[entry_idx]
+
+    res = api.patch(f"/time_entries/{entry.id}/restart")
+    utils.print_valid_response(res, "Timer Started!")
+
+
+@timer.script()
+@utils.config_required
 def stop(check: bool):
     """Stopes a running timer.
     Will first attempt to look in the cache
@@ -144,7 +167,7 @@ def stop(check: bool):
 
         entry_id = entry["id"]
 
-    api.patch(
+    res = api.patch(
         f"/time_entries/{entry_id}/stop",
     )
-    print("Timer Stopped!")
+    utils.print_valid_response(res, "Timer Stopped!")

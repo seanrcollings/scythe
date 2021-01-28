@@ -1,3 +1,6 @@
+"""Helper Classes to abstract away some of the complexity of the returned objects"""
+
+
 class DictWrapper:
     def __init__(self, data: dict):
         self.data = data
@@ -28,3 +31,10 @@ class Task(DictWrapper):
     def __init__(self, task: dict):
         ext: dict = task.pop("task")
         super().__init__(task | ext)
+
+
+class TimeEntry(DictWrapper):
+    ...
+
+
+# def __init__(self, entry: dict):

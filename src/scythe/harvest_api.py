@@ -36,10 +36,5 @@ class HarvestApi(requests.Session):
         return self.get(f"/users/{user_id}/project_assignments")
 
     def get_running_timer(self):
-        timers = self.get("/time_entries").json()["time_entries"]
-        timer: dict
-        for timer in timers:
-            if timer["is_running"]:
-                return timer
-
-        return None
+        timers = self.get("/time_entries?is_running=true").json()["time_entries"]
+        return timers[0] if len(timers) > 0 else None
