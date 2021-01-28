@@ -1,4 +1,4 @@
 # Scythe
 
 ## TODO:
-- Give `timer:start` a `--restart` flag to restart the most recently stopped timer
+- Handle SelectionMenu items overflowing onto extra lines

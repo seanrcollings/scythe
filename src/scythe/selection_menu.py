@@ -1,4 +1,3 @@
-import time
 from typing import List
 import sys
 import termios
@@ -60,17 +59,29 @@ x = 120
 y = 121
 z = 122
 
-ENTER_TUP = (13, 10)
-ESC = 27  # \u001b
+ZERO = 48
+ONE = 49
+TWO = 50
+THREE = 51
+FOUR = 52
+FIVE = 53
+SIX = 54
+SEVEN = 55
+EIGHT = 56
+NINE = 57
 
-UP = (27, 91, 65)
-DOWN = (27, 91, 66)
-RIGHT = (27, 91, 67)
-LEFT = (27, 91, 68)
+NUMBERS = (ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE)
 
 OPENING_BRACKET = 91
 BACKSLASH = 92
 CLOSING_BRACKET = 93
+
+ESC = 27  # \u001b
+UP = (ESC, OPENING_BRACKET, A)
+DOWN = (ESC, OPENING_BRACKET, B)
+RIGHT = (ESC, OPENING_BRACKET, C)
+LEFT = (ESC, OPENING_BRACKET, D)
+ENTER_TUP = (13, 10)
 
 
 def getch(val: int = 1):
@@ -142,6 +153,11 @@ class SelectionMenu:
                 print("Stop!")
                 sys.exit(0)
 
+            elif char in NUMBERS:
+                value = int(chr(char))
+                if value < len(self.options):
+                    selected_index = value
+
             elif char in ENTER_TUP:
                 print(f"Selected: {self.options[selected_index]}")
                 move += 1
@@ -168,7 +184,7 @@ def getpos():
     while (char := getch()) != "R":
         chars += char
 
-    return (int(val) for val in chars.split(";"))
+    return tuple(int(val) for val in chars.split(";"))
 
 
 def pos(row, column):
