@@ -63,9 +63,20 @@ def init(token: str, accid: int):
     print(f"Config file written to ({config_file})")
 
 
+@cli.script()
+def whoami():
+    """Prints out the user's info"""
+    res: dict = api.me().json()
+    line_length = len(max(res.keys(), key=len)) + 3
+    transform = lambda string: " ".join(word.capitalize() for word in string.split("_"))
+    for key, val in res.items():
+        print(f"{transform(key):<{line_length}}: {val}")
+
+
 @timer.script("list")
 @utils.config_required
 def list_projects():
+    """Lists all of the user's projects and each project's tasks"""
     projects = api.get_projects(config["user_id"]).json()["project_assignments"]
     projects = Project.from_list(projects)
 
@@ -79,6 +90,7 @@ def list_projects():
 @timer.script()
 @utils.config_required
 def start():
+    """Used to start a timer"""
     projects = api.get_projects(config["user_id"]).json()["project_assignments"]
     projects = Project.from_list(projects)
 
@@ -113,11 +125,18 @@ def start():
 
 @timer.script()
 @utils.config_required
-def stop():
+def stop(check: bool):
+    """Stopes a running timer.
+    Will first attempt to look in the cache
+    for ENTRY_ID and run a call to stop that timer. If that cache entry
+    is not found, then it will call the API to check for running timers
+    Arguments:
+    --check   forces it to call the API, regardless of what is in the cache
+    """
     entry_id = cache.read("entry_id")
 
-    if not entry_id:
-        print("Missed cache... Checking for running timers")
+    if not entry_id or check:
+        print("Checking Harvest for running timers...")
         entry = api.get_running_timer()
         if not entry:
             print("No running timers")
