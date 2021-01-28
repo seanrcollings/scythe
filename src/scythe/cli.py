@@ -126,6 +126,7 @@ def create():
 
 
 @timer.script()
+@timer.script("restart")
 @utils.config_required
 def start():
     """Start a previously created timer"""
