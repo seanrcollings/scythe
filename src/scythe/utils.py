@@ -1,10 +1,10 @@
 from typing import Dict
 from pathlib import Path
 import functools
+from textwrap import wrap
 
 import requests
 from arc.errors import ExecutionError
-from arc.color import fg
 from . import config_file
 
 
@@ -65,3 +65,9 @@ class Cache:
                     f"{key.upper()}={value}" for key, value in self.cache_data.items()
                 )
             )
+
+
+def paragraphize(string: str, length: int = 70, beginning: str = ""):
+    if len(string) == 0:
+        return ""
+    return beginning + f"\n{beginning}".join(wrap(string, length)) + "\n"

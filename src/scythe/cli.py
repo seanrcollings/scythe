@@ -1,5 +1,5 @@
 import datetime
-import re
+import shutil
 
 from arc import CLI, Utility
 from arc.errors import ExecutionError
@@ -135,8 +135,10 @@ def start():
         "time_entries"
     ]
     entries = helpers.TimeEntry.from_list(entries)
+    columns = shutil.get_terminal_size((50, 20)).columns - 6
     entry_names = [
-        f"{entry.hours} - {entry.project['name']} - {entry.task['name']} - {entry.notes}"
+        f"{entry.hours} - {entry.project['name']} - {entry.task['name']} "
+        f"\n{utils.paragraphize(entry.notes, length=columns, beginning=' |  ')}"
         for entry in entries
     ]
 

@@ -5,6 +5,7 @@ import tty
 
 from arc.color import fg, bg, effects
 
+
 A = 65
 B = 66
 C = 67
@@ -81,6 +82,7 @@ UP = (ESC, OPENING_BRACKET, A)
 DOWN = (ESC, OPENING_BRACKET, B)
 RIGHT = (ESC, OPENING_BRACKET, C)
 LEFT = (ESC, OPENING_BRACKET, D)
+# Enter is 13 on some systems and 10 on others
 ENTER_TUP = (13, 10)
 
 
@@ -137,9 +139,10 @@ class SelectionMenu:
         selected_index = 0
         move = len(self.options)
 
-        print("Press `q` to quit at any time")
-
         while True:
+            clear()
+            home_pos()
+            print(f"Press {fg.YELLOW}q{effects.CLEAR} to quit at any time")
             for index, string in enumerate(self.options):
                 if index == selected_index:
                     print(self.selected_format_str.format(index=index, string=string))
@@ -159,8 +162,6 @@ class SelectionMenu:
                     selected_index = value
 
             elif char in ENTER_TUP:
-                print(f"Selected: {self.options[selected_index]}")
-                move += 1
                 return selected_index, self.options[selected_index]
 
             elif char == ESC:
@@ -172,9 +173,6 @@ class SelectionMenu:
                 elif sequence == DOWN:
                     if selected_index < len(self.options) - 1:
                         selected_index += 1
-
-            Move.up(move)
-            Move.left(1000)
 
 
 def getpos():
@@ -191,9 +189,17 @@ def pos(row, column):
     send(f"\033[{row};{column}f")
 
 
-# def save_pos():
-#     send("\u001b[s")
+def save_pos():
+    send("\u001b[s")
 
 
-# def restore_pos():
-#     send("\u001b[u")
+def restore_pos():
+    send("\u001b[u")
+
+
+def clear():
+    send("\u001b[2J")
+
+
+def home_pos():
+    send("\u001b[H")
