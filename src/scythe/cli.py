@@ -91,9 +91,8 @@ def list_projects():
 @timer.script()
 @utils.config_required
 def create():
-    """Used to create a timer
-    Starts the timer as well
-    """
+    """Creates a timer
+    Starts the timer as well"""
     projects = api.get_projects(config.user_id).json()["project_assignments"]
     projects = helpers.Project.from_list(projects)
 
@@ -175,7 +174,7 @@ def stop(force: bool):
 @timer.script()
 @utils.config_required
 def delete():
-    """Used to close a timer from today"""
+    """Used to close a timer from the current day's list"""
     print("Fetching timers from today...")
     entries = api.get(f"/time_entries?from={datetime.date.today()}").json()[
         "time_entries"
