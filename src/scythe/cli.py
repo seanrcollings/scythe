@@ -2,16 +2,13 @@ import datetime
 from collections import namedtuple
 
 from arc import CLI, Utility
+from arc.color import effects, fg
 from arc.errors import ExecutionError
-from arc.color import fg, effects
-from arc.utilities.debug import debug
 
-from . import config_file, cache_file
+
+from . import cache_file, config_file, helpers, utils
 from .harvest_api import HarvestApi
-from . import utils
 from .selection_menu import SelectionMenu
-from . import helpers
-
 
 Config = namedtuple("Config", ["token", "account_id", "user_id"])
 config = Config(**utils.load_file(config_file))
@@ -19,7 +16,7 @@ cache = utils.Cache(cache_file)
 
 
 timer = Utility("timer")
-cli = CLI(utilities=[debug, timer])
+cli = CLI(utilities=[timer])
 
 if config_file.exists():
     # Any scripts that need access should use
@@ -43,7 +40,8 @@ def init(token: str, accid: int):
     if res.status_code != 200:
         raise ExecutionError(
             f"{fg.RED.bright}Error!{effects.CLEAR} The api returned a "
-            f"{fg.YELLOW}{res.status_code}{effects.CLEAR} with the following body:\n{res.text}"
+            f"{fg.YELLOW}{res.status_code}{effects.CLEAR} "
+            f"with the following body:\n{res.text}"
         )
 
     file_config = {
@@ -128,17 +126,26 @@ def create():
 @timer.script()
 @timer.script("restart")
 @utils.config_required
-def start():
-    """Start a previously created timer."""
-    print("Fetching timers from today...")
-    entries = api.get(f"/time_entries?from={datetime.date.today()}").json()[
-        "time_entries"
-    ]
+def start(cached: bool):
+    """Start a previously created timer.
 
-    entries = helpers.TimeEntry.from_list(entries)
-    entry_idx, _ = utils.pick_time_entry(entries)
-    entry_id = entries[entry_idx].id
-    cache.write(entry_id=entry_id)
+    Arguments:
+    --cached   Will check the cache for an ENTRY_ID and start that timer
+    """
+
+    entry_id = None
+    if cached:
+        entry_id = cache.read("entry_id")
+
+    if not entry_id:
+        print("Fetching timers from today...")
+        entries = api.get(f"/time_entries?from={datetime.date.today()}").json()[
+            "time_entries"
+        ]
+        entries = helpers.TimeEntry.from_list(entries)
+        entry_idx, _ = utils.pick_time_entry(entries)
+        entry_id = entries[entry_idx].id
+        cache.write(entry_id=entry_id)
 
     res = api.patch(f"/time_entries/{entry_id}/restart")
     utils.print_valid_response(res, "Timer Started!")
@@ -146,16 +153,18 @@ def start():
 
 @timer.script()
 @utils.config_required
-def stop(force: bool):
+def stop(cached: bool):
     """Stopes a running timer.
-    Will first attempt to look in the cache
-    for ENTRY_ID and run a call to stop that timer. If that cache entry
-    is not found, then it will call the API to check for running timers
+
     Arguments:
-    --force   forces it to call the API, regardless of what is in the cache
+    --cached  Will check the cache for an ENTRY_ID and stop that timer
     """
 
-    if not (entry_id := cache.read("entry_id")) or force:
+    entry_id = None
+    if cached:
+        entry_id = cache.read("entry_id")
+
+    if not entry_id:
         print("Checking Harvest for running timers...")
         entry = api.get_running_timer()
         if not entry:
@@ -173,16 +182,21 @@ def stop(force: bool):
 
 @timer.script()
 @utils.config_required
-def delete():
-    """Used to close a timer from the current day's list"""
-    print("Fetching timers from today...")
-    entries = api.get(f"/time_entries?from={datetime.date.today()}").json()[
-        "time_entries"
-    ]
+def delete(cached: bool):
+    """Used to delete a timer from the current day's list"""
 
-    entries = helpers.TimeEntry.from_list(entries)
-    entry_idx, _ = utils.pick_time_entry(entries)
-    entry = entries[entry_idx]
+    entry_id = None
+    if cached:
+        entry_id = cache.read("entry_id")
 
-    res = api.delete(f"/time_entries/{entry.id}")
+    if not entry_id:
+        payload = {"from": str(datetime.date.today())}
+        print("Fetching timers from today...")
+        entries = api.get("/time_entries", params=payload).json()["time_entries"]
+
+        entries = helpers.TimeEntry.from_list(entries)
+        entry_idx, _ = utils.pick_time_entry(entries)
+        entry_id = entries[entry_idx].id
+
+    res = api.delete(f"/time_entries/{entry_id}")
     utils.print_valid_response(res, "Timer Deleted")

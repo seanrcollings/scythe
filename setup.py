@@ -15,13 +15,7 @@ setuptools.setup(
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
     zip_safe=False,
-    classifiers=[
-        "Development Status :: 3 - Alpha",
-        "Intended Audience :: Developers",
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-    ],
     python_requires=">=3.9",
     entry_points={"console_scripts": ["scythe = scythe.cli:cli"]},
+    install_requies=["arc-cli", "requests"],
 )

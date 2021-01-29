@@ -141,7 +141,7 @@ class SelectionMenu:
         clear()
         while True:
             home_pos()
-            print(f"Press {fg.YELLOW}q{effects.CLEAR} to quit at any time")
+            print(f"Press {fg.YELLOW}q{effects.CLEAR} to quit")
             for index, string in enumerate(self.options):
                 if index == selected_index:
                     print(self.selected_format_str.format(index=index, string=string))

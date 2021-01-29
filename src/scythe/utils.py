@@ -37,7 +37,7 @@ def load_file(file: Path) -> Dict[str, str]:
 
 
 def handle_response(res: requests.Response):
-    if res.status_code >= 200 or res.status_code < 300:
+    if res.status_code >= 200 and res.status_code < 300:
         return True
 
     raise ExecutionError(f"Request failed with the following message: {res.text}")

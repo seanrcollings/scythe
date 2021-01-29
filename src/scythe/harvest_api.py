@@ -14,8 +14,8 @@ class HarvestApi(requests.Session):
             }
         )
 
-    def get(self, url, *args, **kwargs):
-        return super().get(f"{self.base_url}{url}", *args, **kwargs)
+    def get(self, url, **kwargs):
+        return super().get(f"{self.base_url}{url}", **kwargs)
 
     def post(self, url, data=None, json=None, **kwargs):
         return super().post(f"{self.base_url}{url}", data, json, **kwargs)
