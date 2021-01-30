@@ -1,4 +1,5 @@
 import datetime
+import time
 from collections import namedtuple
 
 from arc import CLI, Utility
@@ -9,6 +10,7 @@ from arc.errors import ExecutionError
 from . import cache_file, config_file, helpers, utils
 from .harvest_api import HarvestApi
 from .selection_menu import SelectionMenu
+from .live_text import LiveText
 
 Config = namedtuple("Config", ["token", "account_id", "user_id"])
 config = Config(**utils.load_file(config_file))
@@ -16,7 +18,8 @@ cache = utils.Cache(cache_file)
 
 
 timer = Utility("timer")
-cli = CLI(utilities=[timer])
+projects = Utility("project")
+cli = CLI(utilities=[timer, projects])
 
 if config_file.exists():
     # Any scripts that need access should use
@@ -72,7 +75,7 @@ def whoami():
         print(f"{transform(key):<{line_length}}: {val}")
 
 
-@timer.script("list")
+@projects.script("list")
 @utils.config_required
 def list_projects():
     """Lists all of the user's projects and each project's tasks"""
@@ -124,6 +127,52 @@ def create():
 
 
 @timer.script()
+@utils.config_required
+def running(interval: int = 10):
+    """Displays the currently running timer
+
+    interval=VALUE interval in which to refresh data by calling the api. Defaults
+        to 10
+    """
+    entry = api.get_running_timer()
+    if not entry:
+        print("No running timer")
+        return
+
+    entry = helpers.TimeEntry(entry)
+    hours, minutes = utils.parse_time(entry.hours)
+    format_str = "Time Spent: {hours} \n Project: {project_name}\n Task: {task_name}\n Notes: {notes}"
+    text = LiveText(
+        format_str.format(
+            hours=f"{hours}:{minutes}",
+            project_name=entry.project["name"],
+            task_name=entry.task["name"],
+            notes=entry.notes,
+        )
+    )
+
+    while True:
+        entry = api.get_running_timer()
+        if not entry:
+            print("Timer stopped running")
+            return
+
+        entry = helpers.TimeEntry(entry)
+        hours, minutes = utils.parse_time(entry.hours)
+
+        text.update(
+            format_str.format(
+                hours=f"{hours}:{minutes}",
+                project_name=entry.project["name"],
+                task_name=entry.task["name"],
+                notes=entry.notes,
+            )
+        )
+
+        time.sleep(interval)
+
+
+@timer.script()
 @timer.script("restart")
 @utils.config_required
 def start(cached: bool):
@@ -154,7 +203,7 @@ def start(cached: bool):
 @timer.script()
 @utils.config_required
 def stop(cached: bool):
-    """Stopes a running timer.
+    """Stops a running timer.
 
     Arguments:
     --cached  Will check the cache for an ENTRY_ID and stop that timer
@@ -183,7 +232,10 @@ def stop(cached: bool):
 @timer.script()
 @utils.config_required
 def delete(cached: bool):
-    """Used to delete a timer from the current day's list"""
+    """Used to delete a timer from the current day's list
+    Arguments:
+    --cached  Will check the cache for an ENTRY_ID and delete that timer
+    """
 
     entry_id = None
     if cached:

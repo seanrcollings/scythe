@@ -18,9 +18,13 @@ $ pip install ./scythe
 
 `scythe whoami` - Prints the Harvest user's information
 
+`scythe project:list` - Lists out all the projects that the user is in
+
 `scythe timer:create` - Presents an interface to create a timer based on project and task. Will automatically start the timer upon creation.
 
 `scythe timer:start/restart` - Used to start / restart a previously created timer.
+
+`scythe timer:running` - Display the currently running timer
 
 `scythe timer:stop` - Will stop the currenlty running timer
 
