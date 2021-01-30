@@ -30,3 +30,10 @@ $ pip install ./scythe
 
 `scythe timer:delete` - Presents an interface to delete a timer from today
 
+
+# TODO
+- Spice up the design of `timer:running` with a big ASCII clock
+- Implement a `stats` utility
+  - Show time spent per project
+  - Show time spent per project task
+- Add the ability to update a timer
