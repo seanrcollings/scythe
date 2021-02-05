@@ -11,8 +11,8 @@ mypy = "*"
 
 [packages]
 arc-cli = "*"
-scythe = {editable = true, path = "."}
 requests = "*"
+scythe = {editable = true, path = "."}
 
 [requires]
 python_version = "3.9"

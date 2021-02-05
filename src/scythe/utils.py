@@ -1,14 +1,16 @@
-from typing import Dict
-import math
-from pathlib import Path
 import functools
-from textwrap import wrap
+import math
 import shutil
+from pathlib import Path
+from textwrap import wrap
+from typing import Dict
+import sys
 
 import requests
 from arc.errors import ExecutionError
+from arc.ui import SelectionMenu
+
 from . import config_file
-from .selection_menu import SelectionMenu
 
 
 def config_required(func):
@@ -79,14 +81,13 @@ def paragraphize(string: str, length: int = 70, beginning: str = ""):
 def pick_time_entry(entries: list):
 
     columns = shutil.get_terminal_size((50, 20)).columns - 6
-    format_time = lambda hours, minutes: f"{hours}:{minutes}"
     entry_names = [
         f"{format_time(*parse_time(entry.hours))} - {entry.project['name']} - {entry.task['name']} "
         f"\n{paragraphize(entry.notes, length=columns, beginning=' |  ')}"
         for entry in entries
     ]
 
-    return SelectionMenu(entry_names).render()
+    return exist_or_exit(SelectionMenu(entry_names).run())
 
 
 def parse_time(time: float):
@@ -94,3 +95,15 @@ def parse_time(time: float):
     minutes = math.floor(round(minutes, 2) * 60)
     hours = int(hours)
     return hours, minutes
+
+
+def format_time(hours, minutes):
+    minutes_str = str(minutes) if minutes > 10 else f"0{minutes}"
+    return f"{hours}:{minutes_str}"
+
+
+def exist_or_exit(val):
+    if val is None:
+        sys.exit(0)
+
+    return val

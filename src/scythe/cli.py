@@ -5,11 +5,11 @@ from collections import namedtuple
 from arc import CLI, Utility
 from arc.color import effects, fg
 from arc.errors import ExecutionError
+from arc.ui import SelectionMenu
 
 
 from . import cache_file, config_file, helpers, utils
 from .harvest_api import HarvestApi
-from .selection_menu import SelectionMenu
 from .live_text import LiveText
 
 Config = namedtuple("Config", ["token", "account_id", "user_id"])
@@ -19,7 +19,8 @@ cache = utils.Cache(cache_file)
 
 timer = Utility("timer")
 projects = Utility("project")
-cli = CLI(utilities=[timer, projects])
+stats = Utility("stats")
+cli = CLI(utilities=[timer, projects, stats])
 
 if config_file.exists():
     # Any scripts that need access should use
@@ -66,6 +67,7 @@ def init(token: str, accid: int):
 
 
 @cli.script()
+@utils.config_required
 def whoami():
     """Prints out the user's info"""
     res: dict = api.me().json()
@@ -97,12 +99,16 @@ def create():
     projects = api.get_projects(config.user_id).json()["project_assignments"]
     projects = helpers.Project.from_list(projects)
 
-    project_idx, _ = SelectionMenu([project.name for project in projects]).render()
+    project_idx, _ = utils.exist_or_exit(
+        SelectionMenu([project.name for project in projects]).run()
+    )
     print()
 
     project = projects[project_idx]
 
-    task_idx, _ = SelectionMenu([task.name for task in project.tasks]).render()
+    task_idx, _ = utils.exist_or_exit(
+        SelectionMenu([task.name for task in project.tasks]).run()
+    )
     print()
 
     task = project.tasks[task_idx]
@@ -141,7 +147,10 @@ def running(interval: int = 10):
 
     entry = helpers.TimeEntry(entry)
     hours, minutes = utils.parse_time(entry.hours)
-    format_str = "Time Spent: {hours} \n Project: {project_name}\n Task: {task_name}\n Notes: {notes}"
+    format_str = (
+        "Time Spent: {hours} \n Project: {project_name}\n"
+        " Task: {task_name}\n Notes: {notes}"
+    )
     text = LiveText(
         format_str.format(
             hours=f"{hours}:{minutes}",
@@ -162,7 +171,7 @@ def running(interval: int = 10):
 
         text.update(
             format_str.format(
-                hours=f"{hours}:{minutes}",
+                hours=utils.format_time(hours, minutes),
                 project_name=entry.project["name"],
                 task_name=entry.task["name"],
                 notes=entry.notes,
@@ -252,3 +261,9 @@ def delete(cached: bool):
 
     res = api.delete(f"/time_entries/{entry_id}")
     utils.print_valid_response(res, "Timer Deleted")
+
+
+@stats.script()
+@utils.config_required
+def today():
+    """Prints out stats for today's projects"""
