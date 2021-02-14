@@ -1,102 +1,27 @@
 import datetime
 import time
-from collections import namedtuple
 
-from arc import CLI, Utility
-from arc.color import effects, fg
-from arc.errors import ExecutionError
+from arc import Context
 from arc.ui import SelectionMenu
+from arc.color import effects
+
+from .. import helpers
+from .. import utils
+from ..harvest_api import HarvestApi
+from ..live_text import LiveText
+
+from . import timer
 
 
-from . import cache_file, config_file, helpers, utils
-from .harvest_api import HarvestApi
-from .live_text import LiveText
-
-Config = namedtuple("Config", ["token", "account_id", "user_id"])
-config = Config(**utils.load_file(config_file))
-cache = utils.Cache(cache_file)
-
-
-timer = Utility("timer")
-projects = Utility("project")
-stats = Utility("stats")
-cli = CLI(utilities=[timer, projects, stats])
-
-if config_file.exists():
-    # Any scripts that need access should use
-    # the @utils.config_required decorator
-    api = HarvestApi(config.token, config.account_id)
-
-
-@cli.script()
-def init(token: str, accid: int):
-    """Used to write your Harvest
-    ID and Access Token to the configuration file
-
-    Arguments:
-    token=TOKEN Harvest Account token generated at https://id.getharvest.com/developers
-    accid=ID Harvest Account ID to be sent with every request
-    """
-    print("Checking a call can be made with the provided data...")
-    init_api = HarvestApi(token, accid)
-    res = init_api.me()
-
-    if res.status_code != 200:
-        raise ExecutionError(
-            f"{fg.RED.bright}Error!{effects.CLEAR} The api returned a "
-            f"{fg.YELLOW}{res.status_code}{effects.CLEAR} "
-            f"with the following body:\n{res.text}"
-        )
-
-    file_config = {
-        "TOKEN": token,
-        "ACCOUNT_ID": accid,
-        "USER_ID": res.json()["id"],
-    }
-
-    print(f"{fg.GREEN}Success!{effects.CLEAR}")
-    print(
-        "Creating config file with:",
-        *(f"{key}: {value}" for key, value in file_config.items()),
-        sep="\n",
-    )
-    with open(config_file, "w+") as file:
-        file.write("\n".join(f"{key}={value}" for key, value in file_config.items()))
-
-    print(f"Config file written to ({config_file})")
-
-
-@cli.script()
+@timer.subcommand()
 @utils.config_required
-def whoami():
-    """Prints out the user's info"""
-    res: dict = api.me().json()
-    line_length = len(max(res.keys(), key=len)) + 3
-    transform = lambda string: " ".join(word.capitalize() for word in string.split("_"))
-    for key, val in res.items():
-        print(f"{transform(key):<{line_length}}: {val}")
-
-
-@projects.script("list")
-@utils.config_required
-def list_projects():
-    """Lists all of the user's projects and each project's tasks"""
-    projects = api.get_projects(config.user_id).json()["project_assignments"]
-    projects = helpers.Project.from_list(projects)
-
-    for idx, project in enumerate(projects):
-        print(f"{effects.BOLD}{fg.GREEN}({idx}) {project.name}{effects.CLEAR}")
-
-        for task_idx, task in enumerate(project.tasks):
-            print(f"\t({task_idx}) {task.name}")
-
-
-@timer.script()
-@utils.config_required
-def create():
+def create(ctx: Context):
     """Creates a timer
     Starts the timer as well"""
-    projects = api.get_projects(config.user_id).json()["project_assignments"]
+    api: HarvestApi = ctx.api
+    cache: utils.Cache = ctx.cache
+
+    projects = api.get_projects(ctx.config.user_id).json()["project_assignments"]
     projects = helpers.Project.from_list(projects)
 
     project_idx, _ = utils.exist_or_exit(
@@ -132,14 +57,15 @@ def create():
     cache.write(entry_id=res.json()["id"])
 
 
-@timer.script()
+@timer.subcommand()
 @utils.config_required
-def running(interval: int = 10):
+def running(ctx: Context, interval: int = 10):
     """Displays the currently running timer
 
     interval=VALUE interval in which to refresh data by calling the api. Defaults
         to 10
     """
+    api: HarvestApi = ctx.api
     entry = api.get_running_timer()
     if not entry:
         print("No running timer")
@@ -181,15 +107,16 @@ def running(interval: int = 10):
         time.sleep(interval)
 
 
-@timer.script()
-@timer.script("restart")
+@timer.subcommand()
 @utils.config_required
-def start(cached: bool):
+def start(cached: bool, ctx: Context):
     """Start a previously created timer.
 
     Arguments:
     --cached   Will check the cache for an ENTRY_ID and start that timer
     """
+    api: HarvestApi = ctx.api
+    cache: utils.Cache = ctx.cache
 
     entry_id = None
     if cached:
@@ -209,14 +136,16 @@ def start(cached: bool):
     utils.print_valid_response(res, "Timer Started!")
 
 
-@timer.script()
+@timer.subcommand()
 @utils.config_required
-def stop(cached: bool):
+def stop(cached: bool, ctx: Context):
     """Stops a running timer.
 
     Arguments:
     --cached  Will check the cache for an ENTRY_ID and stop that timer
     """
+    api: HarvestApi = ctx.api
+    cache: utils.Cache = ctx.cache
 
     entry_id = None
     if cached:
@@ -238,13 +167,16 @@ def stop(cached: bool):
     cache.write(entry_id=entry_id)
 
 
-@timer.script()
+@timer.subcommand()
 @utils.config_required
-def delete(cached: bool):
+def delete(cached: bool, ctx: Context):
     """Used to delete a timer from the current day's list
     Arguments:
     --cached  Will check the cache for an ENTRY_ID and delete that timer
     """
+
+    api: HarvestApi = ctx.api
+    cache: utils.Cache = ctx.cache
 
     entry_id = None
     if cached:
@@ -261,9 +193,3 @@ def delete(cached: bool):
 
     res = api.delete(f"/time_entries/{entry_id}")
     utils.print_valid_response(res, "Timer Deleted")
-
-
-@stats.script()
-@utils.config_required
-def today():
-    """Prints out stats for today's projects"""

@@ -1,4 +1,4 @@
-from .selection_menu import clear, home_pos
+from arc.ui.utils import clear, home_pos
 
 
 class LiveText:
