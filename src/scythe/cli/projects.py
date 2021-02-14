@@ -1,11 +1,11 @@
-from arc import Context
+from arc import Context, namespace
 from arc.color import effects, fg
 
 from .. import helpers
 from .. import utils
 from ..harvest_api import HarvestApi
 
-from . import projects
+projects = namespace("projects")
 
 
 @projects.subcommand("list")

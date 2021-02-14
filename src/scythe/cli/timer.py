@@ -1,7 +1,7 @@
 import datetime
 import time
 
-from arc import Context
+from arc import Context, namespace
 from arc.ui import SelectionMenu
 from arc.color import effects
 
@@ -10,7 +10,8 @@ from .. import utils
 from ..harvest_api import HarvestApi
 from ..live_text import LiveText
 
-from . import timer
+
+timer = namespace("timer")
 
 
 @timer.subcommand()

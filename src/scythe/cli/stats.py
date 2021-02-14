@@ -2,7 +2,8 @@ from arc import namespace
 
 from .. import utils
 
-from . import stats
+
+stats = namespace("stats")
 
 
 @stats.subcommand()

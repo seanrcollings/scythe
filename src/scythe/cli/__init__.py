@@ -10,6 +10,10 @@ from .. import cache_file, config_file, utils
 from ..harvest_api import HarvestApi
 from ..live_text import LiveText
 
+from .projects import projects
+from .stats import stats
+from .timer import timer
+
 
 Config = namedtuple("Config", ["token", "account_id", "user_id"])
 cache = utils.Cache(cache_file)
@@ -24,18 +28,9 @@ if config_file.exists():
 
 context["cache"] = cache
 
-projects = namespace("projects")
-stats = namespace("stats")
-timer = namespace("timer")
 
 cli = CLI(context=context)
-cli.install_command(projects)
-cli.install_command(timer)
-cli.install_command(stats)
-
-from . import projects_commands
-from . import stats_commands
-from . import timer_commands
+cli.install_commands(timer, projects, stats)
 
 
 @cli.command()
