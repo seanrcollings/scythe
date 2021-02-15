@@ -1,4 +1,5 @@
 from typing import Union
+from arc.utils import logger
 import requests
 
 
@@ -15,9 +16,11 @@ class HarvestApi(requests.Session):
         )
 
     def get(self, url, **kwargs):
+        logger.debug("Fetching %s", url)
         return super().get(f"{self.base_url}{url}", **kwargs)
 
     def post(self, url, data=None, json=None, **kwargs):
+        logger.debug("Posting %s", url)
         return super().post(f"{self.base_url}{url}", data, json, **kwargs)
 
     def put(self, url, data=None, **kwargs):
@@ -27,6 +30,7 @@ class HarvestApi(requests.Session):
         return super().patch(f"{self.base_url}{url}", data, **kwargs)
 
     def delete(self, url, *args, **kwargs):
+        logger.debug("Deleting %s", url)
         return super().delete(f"{self.base_url}{url}", *args, **kwargs)
 
     def me(self):

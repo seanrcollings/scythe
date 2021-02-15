@@ -3,12 +3,16 @@ import math
 import shutil
 from pathlib import Path
 from textwrap import wrap
-from typing import Dict
+from typing import Optional
 import sys
+
+import yaml
 
 import requests
 from arc.errors import ExecutionError
 from arc.ui import SelectionMenu
+from arc.utils import logger
+from arc.color import fg, effects
 
 from . import config_file
 
@@ -25,11 +29,11 @@ def config_required(func):
     return decorator
 
 
-def load_file(file: Path) -> Dict[str, str]:
+def load_file(file: Path) -> dict[str, str]:
     if not file.exists():
         return {}
 
-    data: Dict[str, str] = {}
+    data: dict[str, str] = {}
     with file.open() as f:
         for line in f.readlines():
             key, value = line.strip("\n").split("=")
@@ -52,24 +56,51 @@ def print_valid_response(res: requests.Response, worked: str):
 
 
 class Cache:
+    NOT_LOADED = ExecutionError("Cache not yet loaded")
+
     def __init__(self, file: Path):
         self.cache_file = file
-        self.cache_data = load_file(file)
+        self._data: dict = {}
+        self.loaded = False
 
-    def read(self, key: str):
-        return self.cache_data.get(key)
+    # Dictionary Pass through functions
+    def __getitem__(self, item):
+        self.load()
+        return self._data.get(item)
 
-    def write(self, **kwargs):
-        self.cache_data |= kwargs
-        self.__write()
+    def __setitem__(self, key, value):
+        self.load()
+        self._data[key] = value
 
-    def __write(self):
-        with self.cache_file.open("w+") as file:
-            file.write(
-                "\n".join(
-                    f"{key.upper()}={value}" for key, value in self.cache_data.items()
-                )
-            )
+    def __delitem__(self, key):
+        self.load()
+        del self._data[key]
+
+    def pop(self, value):
+        if isinstance(self._data, dict):
+            return self._data.pop(value)
+
+        raise Cache.NOT_LOADED
+
+    def save(self):
+        logger.debug("%sWriting cache...%s", fg.YELLOW, effects.CLEAR)
+        with open(self.cache_file, "w") as file:
+            file.write(yaml.dump(self._data))
+
+    def load(self):
+        if not self.loaded:
+            logger.debug("Loading Cache")
+            self._data = self.__load()
+            self.loaded = True
+
+    def __load(self):
+        try:
+            file = open(self.cache_file, "r")
+            data: dict = yaml.load(file, yaml.Loader)
+            file.close()
+        except FileNotFoundError:
+            data = {}
+        return data
 
 
 def paragraphize(string: str, length: int = 70, beginning: str = ""):

@@ -17,12 +17,17 @@ timer = namespace("timer")
 @timer.subcommand()
 @utils.config_required
 def create(ctx: Context):
-    """Creates a timer
+    """\
+    Creates a timer
     Starts the timer as well"""
     api: HarvestApi = ctx.api
     cache: utils.Cache = ctx.cache
 
-    projects = api.get_projects(ctx.config.user_id).json()["project_assignments"]
+    projects = (
+        cache["projects"]
+        or api.get_projects(ctx.config.user_id).json()["project_assignments"]
+    )
+    cache["projects"] = projects
     projects = helpers.Project.from_list(projects)
 
     project_idx, _ = utils.exist_or_exit(
@@ -55,16 +60,19 @@ def create(ctx: Context):
     )
 
     utils.print_valid_response(res, "Timer Started!")
-    cache.write(entry_id=res.json()["id"])
+    cache["running_timer"] = res.json()["id"]
+    cache.save()
 
 
 @timer.subcommand()
 @utils.config_required
 def running(ctx: Context, interval: int = 10):
-    """Displays the currently running timer
+    """\
+    Displays the currently running timer
 
-    interval=VALUE interval in which to refresh data by calling the api. Defaults
-        to 10
+    Arguments:
+    interval=VALUE Interval in seconds which to refresh data
+                   by calling the API. Defaults to 10
     """
     api: HarvestApi = ctx.api
     entry = api.get_running_timer()
@@ -114,14 +122,14 @@ def start(cached: bool, ctx: Context):
     """Start a previously created timer.
 
     Arguments:
-    --cached   Will check the cache for an ENTRY_ID and start that timer
+    --cached   Will check the cache for an running_timer and start that timer
     """
     api: HarvestApi = ctx.api
     cache: utils.Cache = ctx.cache
 
     entry_id = None
     if cached:
-        entry_id = cache.read("entry_id")
+        entry_id = cache["running_timer"]
 
     if not entry_id:
         print("Fetching timers from today...")
@@ -131,7 +139,8 @@ def start(cached: bool, ctx: Context):
         entries = helpers.TimeEntry.from_list(entries)
         entry_idx, _ = utils.pick_time_entry(entries)
         entry_id = entries[entry_idx].id
-        cache.write(entry_id=entry_id)
+        cache["running_timer"] = entry_id
+        cache.save()
 
     res = api.patch(f"/time_entries/{entry_id}/restart")
     utils.print_valid_response(res, "Timer Started!")
@@ -143,14 +152,14 @@ def stop(cached: bool, ctx: Context):
     """Stops a running timer.
 
     Arguments:
-    --cached  Will check the cache for an ENTRY_ID and stop that timer
+    --cached  Will check the cache for an running_timer and stop that timer
     """
     api: HarvestApi = ctx.api
     cache: utils.Cache = ctx.cache
 
     entry_id = None
     if cached:
-        entry_id = cache.read("entry_id")
+        entry_id = cache["running_timer"]
 
     if not entry_id:
         print("Checking Harvest for running timers...")
@@ -165,7 +174,8 @@ def stop(cached: bool, ctx: Context):
         f"/time_entries/{entry_id}/stop",
     )
     utils.print_valid_response(res, "Timer Stopped!")
-    cache.write(entry_id=entry_id)
+    cache["running_timer"] = entry_id
+    cache.save()
 
 
 @timer.subcommand()
@@ -173,7 +183,7 @@ def stop(cached: bool, ctx: Context):
 def delete(cached: bool, ctx: Context):
     """Used to delete a timer from the current day's list
     Arguments:
-    --cached  Will check the cache for an ENTRY_ID and delete that timer
+    --cached  Will check the cache for an running_timer and delete that timer
     """
 
     api: HarvestApi = ctx.api
@@ -181,7 +191,7 @@ def delete(cached: bool, ctx: Context):
 
     entry_id = None
     if cached:
-        entry_id = cache.read("entry_id")
+        entry_id = cache["running_timer"]
 
     if not entry_id:
         payload = {"from": str(datetime.date.today())}

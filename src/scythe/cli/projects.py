@@ -13,8 +13,13 @@ projects = namespace("projects")
 def list_projects(ctx: Context):
     """Lists all of the user's projects and each project's tasks"""
     api: HarvestApi = ctx.api
+    cache: utils.Cache = ctx.cache
 
-    projects = api.get_projects(ctx.config.user_id).json()["project_assignments"]
+    projects = (
+        cache["projects"]
+        or api.get_projects(ctx.config.user_id).json()["project_assignments"]
+    )
+    cache["projects"] = projects
     projects = helpers.Project.from_list(projects)
 
     for idx, project in enumerate(projects):
@@ -22,3 +27,5 @@ def list_projects(ctx: Context):
 
         for task_idx, task in enumerate(project.tasks):
             print(f"\t({task_idx}) {task.name}")
+
+    cache.save()

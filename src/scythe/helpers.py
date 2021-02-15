@@ -22,14 +22,14 @@ class Project(DictWrapper):
     name: str
 
     def __init__(self, project: dict):
-        self.tasks = Task.from_list(project.pop("task_assignments"))
-        ext: dict = project.pop("project")
+        self.tasks = Task.from_list(project["task_assignments"])
+        ext: dict = project["project"]
         super().__init__(project | ext)
 
 
 class Task(DictWrapper):
     def __init__(self, task: dict):
-        ext: dict = task.pop("task")
+        ext: dict = task["task"]
         super().__init__(task | ext)
 
 

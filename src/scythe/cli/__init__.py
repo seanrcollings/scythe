@@ -1,14 +1,14 @@
 from typing import Any
 from collections import namedtuple
+import os
 
-from arc import CLI, Context, namespace
+from arc import CLI, Context, namespace, CommandType as ct
 from arc.color import effects, fg
 from arc.errors import ExecutionError
 
 
 from .. import cache_file, config_file, utils
 from ..harvest_api import HarvestApi
-from ..live_text import LiveText
 
 from .projects import projects
 from .stats import stats
@@ -16,7 +16,6 @@ from .timer import timer
 
 
 Config = namedtuple("Config", ["token", "account_id", "user_id"])
-cache = utils.Cache(cache_file)
 
 context: dict[str, Any] = {}
 if config_file.exists():
@@ -26,7 +25,7 @@ if config_file.exists():
     context["config"] = config
     context["api"] = HarvestApi(config.token, config.account_id)
 
-context["cache"] = cache
+context["cache"] = utils.Cache(cache_file)
 
 
 cli = CLI(context=context)
@@ -35,7 +34,8 @@ cli.install_commands(timer, projects, stats)
 
 @cli.command()
 def init(token: str, accid: int):
-    """Used to write your Harvest
+    """\
+    Used to write your Harvest
     ID and Access Token to the configuration file
 
     Arguments:
@@ -53,7 +53,7 @@ def init(token: str, accid: int):
             f"with the following body:\n{res.text}"
         )
 
-    file_config = {
+    config_map = {
         "TOKEN": token,
         "ACCOUNT_ID": accid,
         "USER_ID": res.json()["id"],
@@ -62,11 +62,11 @@ def init(token: str, accid: int):
     print(f"{fg.GREEN}Success!{effects.CLEAR}")
     print(
         "Creating config file with:",
-        *(f"{key}: {value}" for key, value in file_config.items()),
+        *(f"{key}: {value}" for key, value in config_map.items()),
         sep="\n",
     )
     with open(config_file, "w+") as file:
-        file.write("\n".join(f"{key}={value}" for key, value in file_config.items()))
+        file.write("\n".join(f"{key}={value}" for key, value in config_map.items()))
 
     print(f"{fg.GREEN}Config file written ({config_file}){effects.CLEAR}")
 
@@ -81,3 +81,34 @@ def whoami(ctx: Context):
     transform = lambda string: " ".join(word.capitalize() for word in string.split("_"))
     for key, val in res.items():
         print(f"{transform(key):<{line_length}}: {val}")
+
+
+@cli.command("cache")
+def cache(ctx: Context):
+    """Displays the contents of the cache"""
+    cache: utils.Cache = ctx.cache
+    with open(cache.cache_file, "r") as file:
+        print(file.read())
+    print(cache.cache_file)
+
+
+@cache.subcommand()
+def clear(ctx: Context):
+    """Clears the cache's content"""
+    cache: utils.Cache = ctx.cache
+    os.remove(cache.cache_file)
+    print("Cache cleared")
+
+
+@cache.subcommand(command_type=ct.POSITIONAL)
+def delete(key: str, ctx: Context):
+    """\
+    Delete an object from the cache
+
+    scythe cache:delete running_timer
+    will delete the id of the cached running timer
+    """
+    cache: utils.Cache = ctx.cache
+    cache.load()
+    del cache[key]
+    print(f"{key} deleted from cache")
