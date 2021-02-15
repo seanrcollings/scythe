@@ -1,4 +1,6 @@
+import webbrowser
 from arc import namespace, Context
+from arc.color import fg, effects
 
 from ..harvest_api import HarvestApi
 from .. import utils
@@ -8,18 +10,24 @@ AJ_INTERNAL_ID = 4212812
 AJ_STANDUP_ID = 3442769
 AJ_LEARNING_ID = 3336042
 
+
 atomic = namespace("atomic")
 
 
 @atomic.subcommand()
 @utils.config_required
-def standup(ctx: Context):
+def standup(open: bool, ctx: Context):
     """\
     Start Atomic Jolt's Standup
     Timer to today
+
+    Arguments:
+    --open    Will open the STANDUP_LINK provided in
+              in the config file in the default browser
     """
     api: HarvestApi = ctx.api
     cache: utils.Cache = ctx.cache
+    config: utils.Config = ctx.config
 
     projects = (
         cache["projects"]
@@ -37,17 +45,29 @@ def standup(ctx: Context):
     utils.print_valid_response(res, "Standup Timer Started!")
     cache["running_timer"] = res.json()["id"]
     cache.save()
+    if open:
+        if config.standup_link is not None:
+            webbrowser.open_new_tab(config.standup_link)
+        else:
+            print(
+                f"{fg.RED}No STANDUP_LINK present in config file to open{effects.CLEAR}"
+            )
 
 
 @atomic.subcommand()
 @utils.config_required
-def training(ctx: Context):
+def training(open: bool, ctx: Context):
     """\
     Start a timer for Atomic Jolt's
     weekly Training
+
+    Arguments:
+    --open    Will open the TRAINING_LINK provided in
+              in the config file in the default browser
     """
     api: HarvestApi = ctx.api
     cache: utils.Cache = ctx.cache
+    config: utils.Config = ctx.config
 
     projects = (
         cache["projects"]
@@ -67,3 +87,11 @@ def training(ctx: Context):
     utils.print_valid_response(res, "Training Time Started!")
     cache["running_timer"] = res.json()["id"]
     cache.save()
+
+    if open:
+        if config.training_link is not None:
+            webbrowser.open_new_tab(config.training_link)
+        else:
+            print(
+                f"{fg.RED}No TRAINING_LINK present in config file to open{effects.CLEAR}"
+            )

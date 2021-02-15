@@ -16,13 +16,11 @@ from .timer import timer
 from .atomic import atomic
 
 
-Config = namedtuple("Config", ["token", "account_id", "user_id"])
-
 context: dict[str, Any] = {}
 if config_file.exists():
     # Any scripts that need access should use
     # the @utils.config_required decorator
-    config = Config(**utils.load_file(config_file))
+    config = utils.Config.from_file(config_file)
     context["config"] = config
     context["api"] = HarvestApi(config.token, config.account_id)
 

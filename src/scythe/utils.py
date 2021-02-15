@@ -3,8 +3,9 @@ import math
 import shutil
 from pathlib import Path
 from textwrap import wrap
-from typing import Optional
+from dataclasses import dataclass
 import sys
+from typing import Optional
 
 import yaml
 
@@ -29,20 +30,6 @@ def config_required(func):
     return decorator
 
 
-def load_file(file: Path) -> dict[str, str]:
-    if not file.exists():
-        return {}
-
-    data: dict[str, str] = {}
-    with file.open() as f:
-        for line in f.readlines():
-            key, value = line.strip("\n").split("=")
-            key = key.lower()
-            data[key] = value
-
-    return data
-
-
 def handle_response(res: requests.Response):
     if res.status_code >= 200 and res.status_code < 300:
         return True
@@ -53,6 +40,30 @@ def handle_response(res: requests.Response):
 def print_valid_response(res: requests.Response, worked: str):
     if handle_response(res):
         print(worked)
+
+
+@dataclass
+class Config:
+    token: str
+    account_id: str
+    user_id: str
+    # Atomic Jolt Specific Configs
+    standup_link: Optional[str] = None
+    training_link: Optional[str] = None
+
+    @classmethod
+    def from_file(cls, file: Path):
+        if not file.exists():
+            raise FileNotFoundError(f"{file} does not exist")
+
+        data: dict[str, str] = {}
+        with file.open() as f:
+            for line in f.readlines():
+                key, value = line.strip("\n").split("=", maxsplit=1)
+                key = key.lower()
+                data[key] = value
+
+        return Config(**data)
 
 
 class Cache:
