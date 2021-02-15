@@ -7,6 +7,7 @@ from arc.color import effects
 
 from .. import helpers
 from .. import utils
+from .. import decos
 from ..harvest_api import HarvestApi
 from ..live_text import LiveText
 
@@ -15,8 +16,8 @@ timer = namespace("timer")
 
 
 @timer.subcommand()
-@utils.config_required
-@utils.get_projects
+@decos.config_required
+@decos.get_projects
 def create(ctx: Context):
     """\
     Creates a timer
@@ -52,7 +53,7 @@ def create(ctx: Context):
 
 
 @timer.subcommand()
-@utils.config_required
+@decos.config_required
 def running(ctx: Context, interval: int = 10):
     """\
     Displays the currently running timer
@@ -104,7 +105,7 @@ def running(ctx: Context, interval: int = 10):
 
 
 @timer.subcommand()
-@utils.config_required
+@decos.config_required
 def start(cached: bool, ctx: Context):
     """Start a previously created timer.
 
@@ -135,7 +136,7 @@ def start(cached: bool, ctx: Context):
 
 
 @timer.subcommand()
-@utils.config_required
+@decos.config_required
 def stop(cached: bool, ctx: Context):
     """Stops a running timer.
 
@@ -168,7 +169,7 @@ def stop(cached: bool, ctx: Context):
 
 
 @timer.subcommand()
-@utils.config_required
+@decos.config_required
 def delete(cached: bool, ctx: Context):
     """Used to delete a timer from the current day's list
 

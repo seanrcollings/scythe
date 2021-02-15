@@ -4,6 +4,7 @@ from arc.color import fg, effects
 
 from ..harvest_api import HarvestApi
 from .. import utils
+from .. import decos
 from .. import helpers
 
 AJ_INTERNAL_ID = 4212812
@@ -15,8 +16,8 @@ atomic = namespace("atomic")
 
 
 @atomic.subcommand()
-@utils.config_required
-@utils.get_projects
+@decos.config_required
+@decos.get_projects
 def standup(open: bool, ctx: Context):
     """\
     Start Atomic Jolt's Standup
@@ -50,8 +51,8 @@ def standup(open: bool, ctx: Context):
 
 
 @atomic.subcommand()
-@utils.config_required
-@utils.get_projects
+@decos.config_required
+@decos.get_projects
 def training(open: bool, ctx: Context):
     """\
     Start a timer for Atomic Jolt's

@@ -8,6 +8,7 @@ from arc.errors import ExecutionError
 
 
 from .. import cache_file, config_file, utils
+from .. import decos
 from ..harvest_api import HarvestApi
 
 from .projects import projects
@@ -16,18 +17,18 @@ from .timer import timer
 from .atomic import atomic
 
 
-context: dict[str, Any] = {}
+cli_context: dict[str, Any] = {}
 if config_file.exists():
     # Any scripts that need access should use
-    # the @utils.config_required decorator
+    # the @decos.config_required decorator
     config = utils.Config.from_file(config_file)
-    context["config"] = config
-    context["api"] = HarvestApi(config.token, config.account_id)
+    cli_context["config"] = config
+    cli_context["api"] = HarvestApi(config.token, config.account_id)
 
-context["cache"] = utils.Cache(cache_file)
+cli_context["cache"] = utils.Cache(cache_file)
 
 
-cli = CLI(context=context)
+cli = CLI(context=cli_context)
 cli.install_commands(timer, projects, stats, atomic)
 
 
@@ -73,7 +74,7 @@ def init(token: str, accid: int):
 
 
 @cli.command()
-@utils.config_required
+@decos.config_required
 def whoami(ctx: Context):
     """Prints out the user's info"""
     api: HarvestApi = ctx.api
@@ -84,7 +85,7 @@ def whoami(ctx: Context):
         print(f"{transform(key):<{line_length}}: {val}")
 
 
-@cli.command("cache")
+@cli.command()
 def cache(ctx: Context):
     """Displays the contents of the cache"""
     cache: utils.Cache = ctx.cache

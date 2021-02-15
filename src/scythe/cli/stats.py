@@ -1,12 +1,12 @@
 from arc import namespace
 
-from .. import utils
+from .. import decos
 
 
 stats = namespace("stats")
 
 
 @stats.subcommand()
-@utils.config_required
+@decos.config_required
 def today():
     """Prints out stats for today's projects"""
