@@ -1,45 +1,24 @@
 import functools
 import math
 import shutil
+import sys
+from dataclasses import dataclass
 from pathlib import Path
 from textwrap import wrap
-from dataclasses import dataclass
-import sys
 from typing import Optional
 
-import yaml
 
 import requests
+import yaml
+from arc.color import effects, fg
 from arc.errors import ExecutionError
 from arc.ui import SelectionMenu
 from arc.utils import logger
-from arc.color import fg, effects
+from arc import Context
 
 from . import config_file
-
-
-def config_required(func):
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        if not config_file.exists():
-            raise ExecutionError(
-                "Config file must be present to run this command. Run 'scythe init'"
-            )
-        return func(*args, **kwargs)
-
-    return decorator
-
-
-def handle_response(res: requests.Response):
-    if res.status_code >= 200 and res.status_code < 300:
-        return True
-
-    raise ExecutionError(f"Request failed with the following message: {res.text}")
-
-
-def print_valid_response(res: requests.Response, worked: str):
-    if handle_response(res):
-        print(worked)
+from .harvest_api import HarvestApi
+from . import helpers
 
 
 @dataclass
@@ -100,7 +79,7 @@ class Cache:
 
     def load(self):
         if not self.loaded:
-            logger.debug("Loading Cache")
+            logger.debug("%sLoading Cache%s", fg.YELLOW, effects.CLEAR)
             self._data = self.__load()
             self.loaded = True
 
@@ -112,6 +91,64 @@ class Cache:
         except FileNotFoundError:
             data = {}
         return data
+
+
+def config_required(func):
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        if not config_file.exists():
+            raise ExecutionError(
+                "Config file must be present to run this command. Run 'scythe init'"
+            )
+        return func(*args, **kwargs)
+
+    return decorator
+
+
+def get_projects(func):
+    """Convenience wrapper to
+    get the list of projects.
+    Embeds the projects into the
+    ARC context object
+    """
+
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        context: Context = kwargs["ctx"]
+        cache: Cache = context.cache
+        api: HarvestApi = context.api
+
+        if (projects := cache["projects"]) is None:
+            projects = api.get_projects(context.config.user_id).json()[
+                "project_assignments"
+            ]
+            cache.save()
+        cache["projects"] = projects
+        projects = helpers.Project.from_list(projects)
+        context["projects"] = projects
+
+        return func(*args, **kwargs)
+
+    return decorator
+
+
+def handle_response(res: requests.Response):
+    if res.status_code >= 200 and res.status_code < 300:
+        return True
+
+    raise ExecutionError(f"Request failed with the following message: {res.text}")
+
+
+def print_valid_response(res: requests.Response, worked: str):
+    if handle_response(res):
+        print(f"{fg.GREEN}{worked}{effects.CLEAR}")
+
+
+def exist_or_exit(val):
+    if val is None:
+        sys.exit(0)
+
+    return val
 
 
 def paragraphize(string: str, length: int = 70, beginning: str = ""):
@@ -142,10 +179,3 @@ def parse_time(time: float):
 def format_time(hours, minutes):
     minutes_str = str(minutes) if minutes > 10 else f"0{minutes}"
     return f"{hours}:{minutes_str}"
-
-
-def exist_or_exit(val):
-    if val is None:
-        sys.exit(0)
-
-    return val

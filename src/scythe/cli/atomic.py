@@ -16,6 +16,7 @@ atomic = namespace("atomic")
 
 @atomic.subcommand()
 @utils.config_required
+@utils.get_projects
 def standup(open: bool, ctx: Context):
     """\
     Start Atomic Jolt's Standup
@@ -28,13 +29,7 @@ def standup(open: bool, ctx: Context):
     api: HarvestApi = ctx.api
     cache: utils.Cache = ctx.cache
     config: utils.Config = ctx.config
-
-    projects = (
-        cache["projects"]
-        or api.get_projects(ctx.config.user_id).json()["project_assignments"]
-    )
-    cache["projects"] = projects
-    projects = helpers.Project.from_list(projects)
+    projects: list[helpers.Project] = ctx.projects
 
     aj_internal = list(filter(lambda proj: proj.id == AJ_INTERNAL_ID, projects))[0]
     standup_task = list(
@@ -56,6 +51,7 @@ def standup(open: bool, ctx: Context):
 
 @atomic.subcommand()
 @utils.config_required
+@utils.get_projects
 def training(open: bool, ctx: Context):
     """\
     Start a timer for Atomic Jolt's
@@ -68,13 +64,7 @@ def training(open: bool, ctx: Context):
     api: HarvestApi = ctx.api
     cache: utils.Cache = ctx.cache
     config: utils.Config = ctx.config
-
-    projects = (
-        cache["projects"]
-        or api.get_projects(ctx.config.user_id).json()["project_assignments"]
-    )
-    cache["projects"] = projects
-    projects = helpers.Project.from_list(projects)
+    projects: list[helpers.Project] = ctx.projects
 
     aj_internal = list(filter(lambda proj: proj.id == AJ_INTERNAL_ID, projects))[0]
     learning_task = list(

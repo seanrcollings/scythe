@@ -16,19 +16,14 @@ timer = namespace("timer")
 
 @timer.subcommand()
 @utils.config_required
+@utils.get_projects
 def create(ctx: Context):
     """\
     Creates a timer
     Will also start the timer"""
     api: HarvestApi = ctx.api
     cache: utils.Cache = ctx.cache
-
-    projects = (
-        cache["projects"]
-        or api.get_projects(ctx.config.user_id).json()["project_assignments"]
-    )
-    cache["projects"] = projects
-    projects = helpers.Project.from_list(projects)
+    projects: list[helpers.Project] = ctx.projects
 
     project_idx, _ = utils.exist_or_exit(
         SelectionMenu([project.name for project in projects]).run()
