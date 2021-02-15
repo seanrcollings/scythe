@@ -13,6 +13,7 @@ from ..harvest_api import HarvestApi
 from .projects import projects
 from .stats import stats
 from .timer import timer
+from .atomic import atomic
 
 
 Config = namedtuple("Config", ["token", "account_id", "user_id"])
@@ -29,7 +30,7 @@ context["cache"] = utils.Cache(cache_file)
 
 
 cli = CLI(context=context)
-cli.install_commands(timer, projects, stats)
+cli.install_commands(timer, projects, stats, atomic)
 
 
 @cli.command()
@@ -39,8 +40,10 @@ def init(token: str, accid: int):
     ID and Access Token to the configuration file
 
     Arguments:
-    token=TOKEN Harvest Account token generated at https://id.getharvest.com/developers
-    accid=ID Harvest Account ID to be sent with every request
+    token=TOKEN  Harvest Account token generated
+                 at https://id.getharvest.com/developers
+    accid=ID     Harvest Account ID to be
+                 sent with every request
     """
     print("Checking a call can be made with the provided data...")
     init_api = HarvestApi(token, accid)

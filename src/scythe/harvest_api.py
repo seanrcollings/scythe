@@ -1,4 +1,5 @@
 from typing import Union
+import datetime
 from arc.utils import logger
 import requests
 
@@ -42,3 +43,16 @@ class HarvestApi(requests.Session):
     def get_running_timer(self):
         timers = self.get("/time_entries?is_running=true").json()["time_entries"]
         return timers[0] if len(timers) > 0 else None
+
+    def create_timer(
+        self, project_id, task_id, notes: str = "", spent_date=datetime.date.today()
+    ):
+        return self.post(
+            "/time_entries",
+            {
+                "project_id": project_id,
+                "task_id": task_id,
+                "spent_date": str(spent_date),
+                "notes": notes,
+            },
+        )

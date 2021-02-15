@@ -19,7 +19,7 @@ timer = namespace("timer")
 def create(ctx: Context):
     """\
     Creates a timer
-    Starts the timer as well"""
+    Will also start the timer"""
     api: HarvestApi = ctx.api
     cache: utils.Cache = ctx.cache
 
@@ -49,15 +49,7 @@ def create(ctx: Context):
 
     note = input("Note: ")
 
-    res = api.post(
-        "/time_entries",
-        {
-            "project_id": project.id,
-            "task_id": task.id,
-            "spent_date": str(datetime.date.today()),
-            "notes": note,
-        },
-    )
+    res = api.create_timer(project_id=project.id, task_id=task.id, notes=note)
 
     utils.print_valid_response(res, "Timer Started!")
     cache["running_timer"] = res.json()["id"]
@@ -122,7 +114,8 @@ def start(cached: bool, ctx: Context):
     """Start a previously created timer.
 
     Arguments:
-    --cached   Will check the cache for an running_timer and start that timer
+    --cached   Will check the cache for an
+               running_timer and start that timer
     """
     api: HarvestApi = ctx.api
     cache: utils.Cache = ctx.cache
@@ -152,7 +145,8 @@ def stop(cached: bool, ctx: Context):
     """Stops a running timer.
 
     Arguments:
-    --cached  Will check the cache for an running_timer and stop that timer
+    --cached  Will check the cache
+              for an running_timer and stop that timer
     """
     api: HarvestApi = ctx.api
     cache: utils.Cache = ctx.cache
@@ -182,8 +176,10 @@ def stop(cached: bool, ctx: Context):
 @utils.config_required
 def delete(cached: bool, ctx: Context):
     """Used to delete a timer from the current day's list
+
     Arguments:
-    --cached  Will check the cache for an running_timer and delete that timer
+    --cached  Will check the cache
+              for an running_timer and delete that timer
     """
 
     api: HarvestApi = ctx.api
