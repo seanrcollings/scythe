@@ -18,13 +18,13 @@ atomic = namespace("atomic")
 @atomic.subcommand()
 @decos.config_required
 @decos.get_projects
-def standup(open: bool, ctx: Context):
+def standup(launch: bool, ctx: Context):
     """\
     Start Atomic Jolt's Standup
     Timer to today
 
     Arguments:
-    --open    Will open the STANDUP_LINK provided in
+    --launch  Will launch the STANDUP_LINK provided in
               in the config file in the default browser
     """
     api: HarvestApi = ctx.api
@@ -41,7 +41,7 @@ def standup(open: bool, ctx: Context):
     utils.print_valid_response(res, "Standup Timer Started!")
     cache["running_timer"] = res.json()["id"]
     cache.save()
-    if open:
+    if launch:
         if config.standup_link is not None:
             webbrowser.open_new_tab(config.standup_link)
         else:
@@ -53,13 +53,13 @@ def standup(open: bool, ctx: Context):
 @atomic.subcommand()
 @decos.config_required
 @decos.get_projects
-def training(open: bool, ctx: Context):
+def training(launch: bool, ctx: Context):
     """\
     Start a timer for Atomic Jolt's
     weekly Training
 
     Arguments:
-    --open    Will open the TRAINING_LINK provided in
+    --launch  Will launch the TRAINING_LINK provided in
               in the config file in the default browser
     """
     api: HarvestApi = ctx.api
@@ -79,7 +79,7 @@ def training(open: bool, ctx: Context):
     cache["running_timer"] = res.json()["id"]
     cache.save()
 
-    if open:
+    if launch:
         if config.training_link is not None:
             webbrowser.open_new_tab(config.training_link)
         else:
