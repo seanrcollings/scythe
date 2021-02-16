@@ -14,7 +14,6 @@ arc-cli = "*"
 requests = "*"
 scythe = {editable = true, path = "."}
 pyyaml = "*"
-art = "*"
 
 [requires]
 python_version = "3.9"
