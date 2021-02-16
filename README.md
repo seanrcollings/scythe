@@ -1,6 +1,8 @@
 # Scythe
 Harvests are always better with a good tool!
 
+Scythe is a tool for interacting with the Harvest API
+
 
 # Installation
 Clone this repo
