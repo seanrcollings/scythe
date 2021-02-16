@@ -3,13 +3,15 @@ import time
 
 from arc import Context, namespace
 from arc.ui import SelectionMenu
-from arc.color import effects
+from arc.formatters import Box
+from arc.color import effects, fg
 
 from .. import helpers
 from .. import utils
 from .. import decos
 from ..harvest_api import HarvestApi
 from ..live_text import LiveText
+from ..clock import clock
 
 
 timer = namespace("timer")
@@ -54,54 +56,60 @@ def create(ctx: Context):
 
 @timer.subcommand()
 @decos.config_required
-def running(ctx: Context, interval: int = 10):
+def running(ctx: Context, big: bool, interval: int = 10):
     """\
     Displays the currently running timer
 
     Arguments:
     interval=VALUE Interval in seconds which to refresh data
                    by calling the API. Defaults to 10
+
+    --big          Use larger clock characters
     """
     api: HarvestApi = ctx.api
-    entry = api.get_running_timer()
-    if not entry:
-        print("No running timer")
+
+    header = (
+        lambda string: fg.WHITE
+        + effects.UNDERLINE
+        + effects.BOLD
+        + string
+        + effects.CLEAR
+    )
+
+    size = "big" if big else "small"
+    try:
+        with LiveText("") as text:
+            while True:
+                entry = api.get_running_timer()
+                if not entry:
+                    break
+
+                entry = helpers.TimeEntry(entry)
+                hours, minutes = utils.parse_time(entry.hours)
+
+                info_display = Box(
+                    f"{header('Project')}: {entry.project['name']}\n"
+                    f"{header('Task')}: {entry.task['name']}\n"
+                    f"{header('Notes')}: {entry.notes}\n",
+                    padding={"top": 2, "bottom": 2, "left": 4, "right": 4},
+                )
+
+                time_display = Box(
+                    f"{fg.rgb(255, 110, 192)}{clock(hours, minutes, size)}{effects.CLEAR}",
+                    justify="center",
+                    padding={"top": 2, "bottom": 2, "left": 4, "right": 4},
+                )
+
+                text.update(
+                    f"{info_display}\n{time_display}\n"
+                    f"{header('Fetch Interval')}: {interval} seconds"
+                )
+
+                time.sleep(interval)
+    except KeyboardInterrupt:
         return
 
-    entry = helpers.TimeEntry(entry)
-    hours, minutes = utils.parse_time(entry.hours)
-    format_str = (
-        "Time Spent: {hours} \n Project: {project_name}\n"
-        " Task: {task_name}\n Notes: {notes}"
-    )
-    text = LiveText(
-        format_str.format(
-            hours=f"{hours}:{minutes}",
-            project_name=entry.project["name"],
-            task_name=entry.task["name"],
-            notes=entry.notes,
-        )
-    )
-
-    while True:
-        entry = api.get_running_timer()
-        if not entry:
-            print("Timer stopped running")
-            return
-
-        entry = helpers.TimeEntry(entry)
-        hours, minutes = utils.parse_time(entry.hours)
-
-        text.update(
-            format_str.format(
-                hours=utils.format_time(hours, minutes),
-                project_name=entry.project["name"],
-                task_name=entry.task["name"],
-                notes=entry.notes,
-            )
-        )
-
-        time.sleep(interval)
+    print("No Timer Running")
 
 
 @timer.subcommand()
