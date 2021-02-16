@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="scythe",
-    version="0.3",
+    version="0.4",
     license="MIT",
     author="Sean Collings",
     author_email="sean@seanrcollings.com",
