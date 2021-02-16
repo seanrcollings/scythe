@@ -135,7 +135,7 @@ def start(cached: bool, ctx: Context):
         ]
         entries = helpers.TimeEntry.from_list(entries)
         if len(entries) == 0:
-            print(f"{fg.RED}No Entries to Delete{effects.CLEAR}")
+            print(f"{fg.RED}No Entries to Start{effects.CLEAR}")
             return
 
         entry_idx, _ = utils.pick_time_entry(entries)
