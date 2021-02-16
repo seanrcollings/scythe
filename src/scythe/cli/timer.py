@@ -134,6 +134,10 @@ def start(cached: bool, ctx: Context):
             "time_entries"
         ]
         entries = helpers.TimeEntry.from_list(entries)
+        if len(entries) == 0:
+            print(f"{fg.RED}No Entries to Delete{effects.CLEAR}")
+            return
+
         entry_idx, _ = utils.pick_time_entry(entries)
         entry_id = entries[entry_idx].id
         cache["running_timer"] = entry_id
@@ -199,6 +203,9 @@ def delete(cached: bool, ctx: Context):
         entries = api.get("/time_entries", params=payload).json()["time_entries"]
 
         entries = helpers.TimeEntry.from_list(entries)
+        if len(entries) == 0:
+            print(f"{fg.RED}No Entries to Delete{effects.CLEAR}")
+            return
         entry_idx, _ = utils.pick_time_entry(entries)
         entry_id = entries[entry_idx].id
 
