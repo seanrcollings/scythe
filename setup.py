@@ -17,5 +17,5 @@ setuptools.setup(
     zip_safe=False,
     python_requires=">=3.9",
     entry_points={"console_scripts": ["scythe = scythe.cli:cli"]},
-    install_requies=["arc-cli", "requests"],
+    install_requires=["arc-cli>=2.0.1", "requests"],
 )
