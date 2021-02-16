@@ -5,14 +5,9 @@ Scythe is a tool for interacting with the Harvest API
 
 
 # Installation
-Clone this repo
+The package is available on PyPi
 ```
-$ git clone https://github.com/seanrcollings/scythe
-```
-
-Install with pip
-```
-$ pip install ./scythe
+$ pip install scythe-cli
 ```
 
 # Scripts
@@ -50,8 +45,15 @@ Scythe comes with a namespace `atomic` for Atomic Jolt specific timers.
 Both of these scripts also accept a `--launch` flag. This will open the link named `STANDUP_LINK` or `TRAINING_LINK` in the config if they exist.
 
 
+# Development
+This project uses [Poetry](https://python-poetry.org/) for dependancy / build management
+```
+$ git clone https://github.com/seanrcollings/scythe
+$ cd scythe
+$ poetry install
+```
+
 # TODO
-- Spice up the design of `timer:running` with a big ASCII clock
 - Implement a `stats` utility
   - Show time spent per project
   - Show time spent per project task

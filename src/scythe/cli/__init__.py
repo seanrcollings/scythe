@@ -114,3 +114,7 @@ def delete(key: str, ctx: Context):
     cache.load()
     del cache[key]
     print(f"{key} deleted from cache")
+
+
+if __file__ == "__main__":
+    cli()

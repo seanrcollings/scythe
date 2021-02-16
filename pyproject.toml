@@ -1,9 +1,14 @@
 [tool.poetry]
-name = "scythe"
+name = "scythe-cli"
 version = "0.4.0"
 description = "A Harvest is always better with a good tool"
 authors = ["Sean Collings <seanrcollings@gmail.com>"]
 license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/seanrcollings/scythe"
+packages = [
+    {include = "scythe", from = "src"}
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
