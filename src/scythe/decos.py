@@ -32,7 +32,7 @@ def get_projects(func):
         context: Context = kwargs["ctx"]
         cache: Cache = context.cache
         api: HarvestApi = context.api
-        
+
         if (projects := cache["projects"]) is None:
             projects = api.get_projects(context.config.user_id).json()[
                 "project_assignments"

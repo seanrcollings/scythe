@@ -56,7 +56,7 @@ def create(ctx: Context):
 
 @timer.subcommand()
 @decos.config_required
-def running(ctx: Context, big: bool, interval: int = 10):
+def running(ctx: Context, big: bool, clock_only: bool, interval: int = 10):
     """\
     Displays the currently running timer
 
@@ -65,6 +65,7 @@ def running(ctx: Context, big: bool, interval: int = 10):
                    by calling the API. Defaults to 10
 
     --big          Use larger clock characters
+    --clock_only   Only display the clock
     """
     api: HarvestApi = ctx.api
 
@@ -87,23 +88,27 @@ def running(ctx: Context, big: bool, interval: int = 10):
                 entry = helpers.TimeEntry(entry)
                 hours, minutes = utils.parse_time(entry.hours)
 
-                info_display = Box(
-                    f"{header('Project')}: {entry.project['name']}\n"
-                    f"{header('Task')}: {entry.task['name']}\n"
-                    f"{header('Notes')}: {entry.notes}\n",
-                    padding={"top": 2, "bottom": 2, "left": 4, "right": 4},
-                )
-
                 time_display = Box(
                     f"{fg.rgb(255, 110, 192)}{clock(hours, minutes, size)}{effects.CLEAR}",
                     justify="center",
                     padding={"top": 2, "bottom": 2, "left": 4, "right": 4},
                 )
 
-                text.update(
-                    f"{info_display}\n{time_display}\n"
-                    f"{header('Fetch Interval')}: {interval} seconds"
-                )
+                if clock_only:
+                    text.update(time_display)
+
+                else:
+                    info_display = Box(
+                        f"{header('Project')}: {entry.project['name']}\n"
+                        f"{header('Task')}: {entry.task['name']}\n"
+                        f"{header('Notes')}: {entry.notes}\n",
+                        padding={"top": 2, "bottom": 2, "left": 4, "right": 4},
+                    )
+
+                    text.update(
+                        f"{info_display}\n{time_display}\n"
+                        f"{header('Fetch Interval')}: {interval} seconds"
+                    )
 
                 time.sleep(interval)
     except KeyboardInterrupt:

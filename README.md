@@ -58,3 +58,4 @@ $ poetry install
   - Show time spent per project
   - Show time spent per project task
 - Add the ability to update a timer
+- Update the config file to use yaml
