@@ -83,8 +83,8 @@ def whoami(ctx: Context):
         print(f"{transform(key):<{line_length}}: {val}")
 
 
-@cli.command()
-def cache(ctx: Context):
+@cli.command("cache")
+def cache_cmd(ctx: Context):
     """Displays the contents of the cache"""
     cache: utils.Cache = ctx.cache
     with open(cache.cache_file, "r") as file:
@@ -92,7 +92,7 @@ def cache(ctx: Context):
     print(cache.cache_file)
 
 
-@cache.subcommand()
+@cache_cmd.subcommand()
 def clear(ctx: Context):
     """Clears the cache's content"""
     cache: utils.Cache = ctx.cache
@@ -100,7 +100,7 @@ def clear(ctx: Context):
     print("Cache cleared")
 
 
-@cache.subcommand(command_type=ct.POSITIONAL)
+@cache_cmd.subcommand(command_type=ct.POSITIONAL)
 def delete(key: str, ctx: Context):
     """\
     Delete an object from the cache
