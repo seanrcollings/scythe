@@ -1,18 +1,14 @@
 import datetime
-import time
 
+from blessed import Terminal
 from arc import Context, namespace
-from arc.ui import SelectionMenu
-from arc.formatters import Box
 from arc.color import effects, fg
 
 from .. import helpers
 from .. import utils
 from .. import decos
 from ..harvest_api import HarvestApi
-from ..live_text import LiveText
 from ..clock import clock
-
 
 timer = namespace("timer")
 
@@ -28,16 +24,11 @@ def create(ctx: Context):
     cache: utils.Cache = ctx.cache
     projects: list[helpers.Project] = ctx.projects
 
-    project_idx, _ = utils.exist_or_exit(
-        SelectionMenu([project.name for project in projects]).run()
-    )
+    project_idx, _ = utils.exist_or_exit(menu([project.name for project in projects]))
     print()
 
     project = projects[project_idx]
-
-    task_idx, _ = utils.exist_or_exit(
-        SelectionMenu([task.name for task in project.tasks]).run()
-    )
+    task_idx, _ = utils.exist_or_exit(menu([task.name for task in project.tasks]))
     print()
 
     task = project.tasks[task_idx]
@@ -69,52 +60,16 @@ def running(ctx: Context, big: bool, clock_only: bool, interval: int = 10):
     """
     api: HarvestApi = ctx.api
 
-    header = (
-        lambda string: fg.WHITE
-        + effects.UNDERLINE
-        + effects.BOLD
-        + string
-        + effects.CLEAR
-    )
-
     size = "big" if big else "small"
-    try:
-        with LiveText("") as text:
-            while True:
-                entry = api.get_running_timer()
-                if not entry:
-                    break
+    term = Terminal()
+    print(term.home + term.clear + term.move_y(term.height // 2))
+    print(term.black_on_darkkhaki("press any key to continue."))
 
-                entry = helpers.TimeEntry(entry)
-                hours, minutes = utils.parse_time(entry.hours)
+    with term.cbreak(), term.hidden_cursor():
+        inp = term.inkey()
 
-                time_display = Box(
-                    f"{fg.rgb(255, 110, 192)}{clock(hours, minutes, size)}{effects.CLEAR}",
-                    justify="center",
-                    padding={"top": 2, "bottom": 2, "left": 4, "right": 4},
-                )
-
-                if clock_only:
-                    text.update(time_display)
-
-                else:
-                    info_display = Box(
-                        f"{header('Project')}: {entry.project['name']}\n"
-                        f"{header('Task')}: {entry.task['name']}\n"
-                        f"{header('Notes')}: {entry.notes}\n",
-                        padding={"top": 2, "bottom": 2, "left": 4, "right": 4},
-                    )
-
-                    text.update(
-                        f"{info_display}\n{time_display}\n"
-                        f"{header('Fetch Interval')}: {interval} seconds"
-                    )
-
-                time.sleep(interval)
-    except KeyboardInterrupt:
-        return
-
-    print("No Timer Running")
+    print(term.move_down(2) + "You pressed " + term.bold(repr(inp)))
+    # print("No Timer Running")
 
 
 @timer.subcommand()

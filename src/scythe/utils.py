@@ -11,7 +11,6 @@ import requests
 import yaml
 from arc.color import effects, fg
 from arc.errors import ExecutionError
-from arc.ui import SelectionMenu
 from arc.utils import logger
 
 
@@ -114,14 +113,13 @@ def paragraphize(string: str, length: int = 70, beginning: str = ""):
 
 def pick_time_entry(entries: list):
 
-    columns = shutil.get_terminal_size((50, 20)).columns - 6
     entry_names = [
         f"{format_time(*parse_time(entry.hours))} - {entry.project['name']} - {entry.task['name']} "
-        f"\n{paragraphize(entry.notes, length=columns, beginning=' |  ')}"
+        f"\n{entry.notes}"
         for entry in entries
     ]
 
-    return exist_or_exit(SelectionMenu(entry_names).run())
+    return exist_or_exit(menu(entry_names))
 
 
 def parse_time(time: float):
