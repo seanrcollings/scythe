@@ -15,7 +15,6 @@ python = "^3.9"
 requests = "^2.25.1"
 arc-cli = "^2.0.1"
 PyYAML = "^5.4.1"
-blessed = "^1.17.12"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"

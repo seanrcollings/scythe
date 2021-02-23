@@ -9,6 +9,7 @@ from .. import utils
 from .. import decos
 from ..harvest_api import HarvestApi
 from ..clock import clock
+from .. import ui
 
 timer = namespace("timer")
 
@@ -61,15 +62,8 @@ def running(ctx: Context, big: bool, clock_only: bool, interval: int = 10):
     api: HarvestApi = ctx.api
 
     size = "big" if big else "small"
-    term = Terminal()
-    print(term.home + term.clear + term.move_y(term.height // 2))
-    print(term.black_on_darkkhaki("press any key to continue."))
-
-    with term.cbreak(), term.hidden_cursor():
-        inp = term.inkey()
-
-    print(term.move_down(2) + "You pressed " + term.bold(repr(inp)))
-    # print("No Timer Running")
+    ui.running_ui(api, interval, size, clock_only)
+    print("No Timer Running")
 
 
 @timer.subcommand()
