@@ -1,6 +1,5 @@
 import datetime
 
-from blessed import Terminal
 from arc import Context, namespace
 from arc.color import effects, fg
 
@@ -8,7 +7,6 @@ from .. import helpers
 from .. import utils
 from .. import decos
 from ..harvest_api import HarvestApi
-from ..clock import clock
 from .. import ui
 
 timer = namespace("timer")
@@ -25,11 +23,13 @@ def create(ctx: Context):
     cache: utils.Cache = ctx.cache
     projects: list[helpers.Project] = ctx.projects
 
-    project_idx, _ = utils.exist_or_exit(menu([project.name for project in projects]))
+    project_idx, _ = utils.exist_or_exit(
+        ui.menu([project.name for project in projects])
+    )
     print()
 
     project = projects[project_idx]
-    task_idx, _ = utils.exist_or_exit(menu([task.name for task in project.tasks]))
+    task_idx, _ = utils.exist_or_exit(ui.menu([task.name for task in project.tasks]))
     print()
 
     task = project.tasks[task_idx]

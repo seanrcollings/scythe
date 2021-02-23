@@ -12,6 +12,8 @@ from arc.color import effects, fg
 from arc.errors import ExecutionError
 from arc.utils import logger
 
+from .ui import menu
+
 
 @dataclass
 class Config:

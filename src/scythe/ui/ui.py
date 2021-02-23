@@ -11,6 +11,9 @@ class UI(threading.Thread):
         self.info = info
         super().__init__(target=self._run, daemon=True)
 
+    def on_key(self, key: str):
+        ...
+
     def _run(self):
         ...
 
@@ -76,6 +79,8 @@ def main_loop(content_window: CurseWindow, info, component: UI):
             key = content_window.getkey()
             if key == "q":
                 break
+            else:
+                component.on_key(key)
         except Exception:
             ...
         finally:
