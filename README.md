@@ -43,6 +43,12 @@ Scythe comes with a namespace `atomic` for Atomic Jolt specific timers.
 `scythe atomic:training` - Stats the timer for training
 
 Both of these scripts also accept a `--launch` flag. This will open the link named `STANDUP_LINK` or `TRAINING_LINK` in the config if they exist.
+So you could do something like:
+```
+$ echo "STANDUP_LINK=https://meet.google.com/linkname" >> ~/.config/scythe.conf
+$ scyther atomic:standup --launch
+```
+And the standup link would be launched
 
 
 # Development

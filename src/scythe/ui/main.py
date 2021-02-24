@@ -1,9 +1,9 @@
 import curses
 import time
-from typing import Type
+from typing import Type, Optional
 
 from .data_types import *
-from .ui import UI
+from .ui import UI, T
 from ._init import wrapper
 
 
@@ -28,7 +28,7 @@ def main_loop(
     ui: Type[UI],
     *args,
     **kwargs
-):
+) -> Optional[T]:
     running = True
     content_window.nodelay(True)
     content_window.keypad(True)
@@ -49,5 +49,5 @@ def main_loop(
     return component.return_value
 
 
-def run(ui, *args, **kwargs):
+def run(ui, *args, **kwargs) -> T:
     return wrapper(main_loop, ui, *args, **kwargs)
