@@ -62,8 +62,9 @@ def running(ctx: Context, big: bool, clock_only: bool, interval: int = 10):
     api: HarvestApi = ctx.api
 
     size = "big" if big else "small"
-    ui.running_ui(api, interval, size, clock_only)
-    print("No Timer Running")
+    message = ui.running_ui(api, interval, size, clock_only)
+    if message is not None:
+        print(message)
 
 
 @timer.subcommand()
