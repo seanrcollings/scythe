@@ -17,7 +17,7 @@ class Menu(UI[tuple[int, str]]):
             self.selected_index -= 1
             self.queue()
 
-        elif key == "KEY_DOWN" and self.selected_index < len(self.items):
+        elif key == "KEY_DOWN" and self.selected_index < len(self.items) - 1:
             self.selected_index += 1
             self.queue()
 
