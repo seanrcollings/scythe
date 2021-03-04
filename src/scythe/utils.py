@@ -3,7 +3,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import wrap
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 
 import requests
@@ -11,8 +11,13 @@ import yaml
 from arc.color import effects, fg
 from arc.errors import ExecutionError
 from arc.utils import logger
+from arc import Context
 
 from .ui import menu
+from .harvest_api import HarvestApi
+
+if TYPE_CHECKING:
+    from .helpers import Project
 
 
 @dataclass
@@ -85,6 +90,13 @@ class Cache:
         except FileNotFoundError:
             data = {}
         return data
+
+
+class ScytheContext(Context):
+    api: HarvestApi
+    config: Config
+    cache: Cache
+    projects: Optional[list["Project"]]
 
 
 def handle_response(res: requests.Response):

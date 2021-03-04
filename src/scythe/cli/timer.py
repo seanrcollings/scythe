@@ -1,6 +1,6 @@
 import datetime
-
-from arc import Context, namespace
+from typing import cast
+from arc import namespace
 from arc.color import effects, fg
 
 from .. import helpers
@@ -9,19 +9,18 @@ from .. import decos
 from ..harvest_api import HarvestApi
 from .. import ui
 
+
 timer = namespace("timer")
 
 
 @timer.subcommand()
 @decos.config_required
 @decos.get_projects
-def create(ctx: Context):
+def create(ctx: utils.ScytheContext):
     """\
     Creates a timer
     Will also start the timer"""
-    api: HarvestApi = ctx.api
-    cache: utils.Cache = ctx.cache
-    projects: list[helpers.Project] = ctx.projects
+    projects = cast(list[helpers.Project], ctx.projects)
 
     project_idx, _ = utils.exist_or_exit(
         ui.menu([project.name for project in projects])
@@ -39,16 +38,16 @@ def create(ctx: Context):
 
     note = input("Note: ")
 
-    res = api.create_timer(project_id=project.id, task_id=task.id, notes=note)
+    res = ctx.api.create_timer(project_id=project.id, task_id=task.id, notes=note)
 
     utils.print_valid_response(res, "Timer Started!")
-    cache["running_timer"] = res.json()["id"]
-    cache.save()
+    ctx.cache["running_timer"] = res.json()["id"]
+    ctx.cache.save()
 
 
 @timer.subcommand()
 @decos.config_required
-def running(ctx: Context, big: bool, clock_only: bool, interval: int = 10):
+def running(ctx: utils.ScytheContext, big: bool, clock_only: bool, interval: int = 10):
     """\
     Displays the currently running timer
 
@@ -59,33 +58,30 @@ def running(ctx: Context, big: bool, clock_only: bool, interval: int = 10):
     --big          Use larger clock characters
     --clock_only   Only display the clock
     """
-    api: HarvestApi = ctx.api
 
     size = "big" if big else "small"
-    message = ui.running_ui(api, interval, size, clock_only)
+    message = ui.running_ui(ctx.api, interval, size, clock_only)
     if message is not None:
         print(message)
 
 
 @timer.subcommand()
 @decos.config_required
-def start(cached: bool, ctx: Context):
+def start(cached: bool, ctx: utils.ScytheContext):
     """Start a previously created timer.
 
     Arguments:
     --cached   Will check the cache for an
                running_timer and start that timer
     """
-    api: HarvestApi = ctx.api
-    cache: utils.Cache = ctx.cache
 
     entry_id = None
     if cached:
-        entry_id = cache["running_timer"]
+        entry_id = ctx.cache["running_timer"]
 
     if not entry_id:
         print("Fetching timers from today...")
-        entries = api.get(f"/time_entries?from={datetime.date.today()}").json()[
+        entries = ctx.api.get(f"/time_entries?from={datetime.date.today()}").json()[
             "time_entries"
         ]
         entries = helpers.TimeEntry.from_list(entries)
@@ -95,49 +91,47 @@ def start(cached: bool, ctx: Context):
 
         entry_idx, _ = utils.pick_time_entry(entries)
         entry_id = entries[entry_idx].id
-        cache["running_timer"] = entry_id
-        cache.save()
+        ctx.cache["running_timer"] = entry_id
+        ctx.cache.save()
 
-    res = api.patch(f"/time_entries/{entry_id}/restart")
+    res = ctx.api.patch(f"/time_entries/{entry_id}/restart")
     utils.print_valid_response(res, "Timer Started!")
 
 
 @timer.subcommand()
 @decos.config_required
-def stop(cached: bool, ctx: Context):
+def stop(cached: bool, ctx: utils.ScytheContext):
     """Stops a running timer.
 
     Arguments:
     --cached  Will check the cache
               for an running_timer and stop that timer
     """
-    api: HarvestApi = ctx.api
-    cache: utils.Cache = ctx.cache
 
     entry_id = None
     if cached:
-        entry_id = cache["running_timer"]
+        entry_id = ctx.cache["running_timer"]
 
     if not entry_id:
         print("Checking Harvest for running timers...")
-        entry = api.get_running_timer()
+        entry = ctx.api.get_running_timer()
         if not entry:
             print("No running timers")
             return
 
         entry_id = entry["id"]
 
-    res = api.patch(
+    res = ctx.api.patch(
         f"/time_entries/{entry_id}/stop",
     )
     utils.print_valid_response(res, "Timer Stopped!")
-    cache["running_timer"] = entry_id
-    cache.save()
+    ctx.cache["running_timer"] = entry_id
+    ctx.cache.save()
 
 
 @timer.subcommand()
 @decos.config_required
-def delete(cached: bool, ctx: Context):
+def delete(cached: bool, ctx: utils.ScytheContext):
     """Used to delete a timer from the current day's list
 
     Arguments:
@@ -145,17 +139,14 @@ def delete(cached: bool, ctx: Context):
               for an running_timer and delete that timer
     """
 
-    api: HarvestApi = ctx.api
-    cache: utils.Cache = ctx.cache
-
     entry_id = None
     if cached:
-        entry_id = cache["running_timer"]
+        entry_id = ctx.cache["running_timer"]
 
     if not entry_id:
         payload = {"from": str(datetime.date.today())}
         print("Fetching timers from today...")
-        entries = api.get("/time_entries", params=payload).json()["time_entries"]
+        entries = ctx.api.get("/time_entries", params=payload).json()["time_entries"]
 
         entries = helpers.TimeEntry.from_list(entries)
         if len(entries) == 0:
@@ -164,5 +155,5 @@ def delete(cached: bool, ctx: Context):
         entry_idx, _ = utils.pick_time_entry(entries)
         entry_id = entries[entry_idx].id
 
-    res = api.delete(f"/time_entries/{entry_id}")
+    res = ctx.api.delete(f"/time_entries/{entry_id}")
     utils.print_valid_response(res, "Timer Deleted")

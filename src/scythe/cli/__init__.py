@@ -9,6 +9,7 @@ from arc.errors import ExecutionError
 from .. import cache_file, config_file, utils
 from .. import decos
 from ..harvest_api import HarvestApi
+from ..utils import ScytheContext
 from .projects import projects
 from .stats import stats
 from .timer import timer
@@ -16,14 +17,14 @@ from .atomic import atomic
 
 
 cli_context: dict[str, Any] = {}
+cli_context["cache"] = utils.Cache(cache_file)
+
 if config_file.exists():
     # Any scripts that need access should use
     # the @decos.config_required decorator
     config = utils.Config.from_file(config_file)
     cli_context["config"] = config
     cli_context["api"] = HarvestApi(config.token, config.account_id)
-
-cli_context["cache"] = utils.Cache(cache_file)
 
 
 cli = CLI(context=cli_context)
@@ -73,10 +74,9 @@ def init(token: str, accid: int):
 
 @cli.command()
 @decos.config_required
-def whoami(ctx: Context):
+def whoami(ctx: ScytheContext):
     """Prints out the user's info"""
-    api: HarvestApi = ctx.api
-    res: dict = api.me().json()
+    res: dict = ctx.api.me().json()
     line_length = len(max(res.keys(), key=len)) + 3
     transform = lambda string: " ".join(word.capitalize() for word in string.split("_"))
     for key, val in res.items():
@@ -84,33 +84,30 @@ def whoami(ctx: Context):
 
 
 @cli.command("cache")
-def cache_cmd(ctx: Context):
+def cache_cmd(ctx: ScytheContext):
     """Displays the contents of the cache"""
-    cache: utils.Cache = ctx.cache
-    with open(cache.cache_file, "r") as file:
+    with open(ctx.cache.cache_file, "r") as file:
         print(file.read())
-    print(cache.cache_file)
+    print(ctx.cache.cache_file)
 
 
 @cache_cmd.subcommand()
-def clear(ctx: Context):
+def clear(ctx: ScytheContext):
     """Clears the cache's content"""
-    cache: utils.Cache = ctx.cache
-    os.remove(cache.cache_file)
+    os.remove(ctx.cache.cache_file)
     print("Cache cleared")
 
 
 @cache_cmd.subcommand(command_type=ct.POSITIONAL)
-def delete(key: str, ctx: Context):
+def delete(key: str, ctx: ScytheContext):
     """\
     Delete an object from the cache
 
     scythe cache:delete running_timer
     will delete the id of the cached running timer
     """
-    cache: utils.Cache = ctx.cache
-    cache.load()
-    del cache[key]
+    ctx.cache.load()
+    del ctx.cache[key]
     print(f"{key} deleted from cache")
 
 
