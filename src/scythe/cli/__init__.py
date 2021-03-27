@@ -111,5 +111,11 @@ def delete(key: str, ctx: ScytheContext):
     print(f"{key} deleted from cache")
 
 
+@cli.command()
+def sync(ctx: ScytheContext):
+    utils.sync_running_timer(ctx.api, ctx.cache)
+    print("Synced with Harvest!")
+
+
 if __file__ == "__main__":
     cli()

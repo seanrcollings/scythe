@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from textwrap import wrap
 from typing import Optional, TYPE_CHECKING
+import datetime
 
 
 import requests
@@ -66,10 +67,8 @@ class Cache:
         del self._data[key]
 
     def pop(self, value):
-        if isinstance(self._data, dict):
-            return self._data.pop(value)
-
-        raise Cache.NOT_LOADED
+        self.load()
+        return self._data.pop(value)
 
     def save(self):
         logger.debug("%sWriting cache...%s", fg.YELLOW, effects.CLEAR)
@@ -89,7 +88,7 @@ class Cache:
             file.close()
         except FileNotFoundError:
             data = {}
-        return data
+        return data or {}
 
 
 class ScytheContext(Context):
@@ -145,3 +144,22 @@ def parse_time(time: float):
 def format_time(hours, minutes):
     minutes_str = str(minutes) if minutes > 10 else f"0{minutes}"
     return f"{hours}:{minutes_str}"
+
+
+def sync_running_timer(api: HarvestApi, cache: Cache, force: bool = False):
+    last_sync: Optional[datetime.datetime] = cache["last_sync"]
+    if not last_sync:
+        last_sync = datetime.datetime.strptime(
+            "1900-01-01 0:0:0.0", "%Y-%m-%d %H:%M:%S.%f"
+        )
+
+    difference = datetime.datetime.now() - last_sync
+    breakpoint()
+    if difference.seconds >= 3000 or difference.days > 0 or force:
+        new_timer = api.get_running_timer()
+        if new_timer:
+            cache["running_timer"] = new_timer
+        elif cache["running_timer"]:
+            del cache["running_timer"]
+        cache["last_sync"] = datetime.datetime.now()
+        cache.save()

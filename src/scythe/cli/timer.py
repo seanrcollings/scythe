@@ -6,11 +6,11 @@ from arc.color import effects, fg
 from .. import helpers
 from .. import utils
 from .. import decos
-from ..harvest_api import HarvestApi
 from .. import ui
-
+from .running import running
 
 timer = namespace("timer")
+timer.install_command(running)
 
 
 @timer.subcommand()
@@ -41,43 +41,22 @@ def create(ctx: utils.ScytheContext):
     res = ctx.api.create_timer(project_id=project.id, task_id=task.id, notes=note)
 
     utils.print_valid_response(res, "Timer Started!")
-    ctx.cache["running_timer"] = res.json()["id"]
+    ctx.cache["running_timer"] = res.json()
     ctx.cache.save()
 
 
 @timer.subcommand()
 @decos.config_required
-def running(ctx: utils.ScytheContext, big: bool, clock_only: bool, interval: int = 10):
-    """\
-    Displays the currently running timer
-
-    Arguments:
-    interval=VALUE Interval in seconds which to refresh data
-                   by calling the API. Defaults to 10
-
-    --big          Use larger clock characters
-    --clock_only   Only display the clock
-    """
-
-    size = "big" if big else "small"
-    message = ui.running_ui(ctx.api, interval, size, clock_only)
-    if message is not None:
-        print(message)
-
-
-@timer.subcommand()
-@decos.config_required
-def start(cached: bool, ctx: utils.ScytheContext):
+def start(last: bool, ctx: utils.ScytheContext):
     """Start a previously created timer.
 
     Arguments:
-    --cached   Will check the cache for an
-               running_timer and start that timer
+    --last   will start the last stopped timer
     """
 
     entry_id = None
-    if cached:
-        entry_id = ctx.cache["running_timer"]
+    if last:
+        entry_id = ctx.cache["last_running_timer"].get("id")
 
     if not entry_id:
         print("Fetching timers from today...")
@@ -91,7 +70,8 @@ def start(cached: bool, ctx: utils.ScytheContext):
 
         entry_idx, _ = utils.pick_time_entry(entries)
         entry_id = entries[entry_idx].id
-        ctx.cache["running_timer"] = entry_id
+        breakpoint()
+        ctx.cache["running_timer"] = entries[entry_idx].data
         ctx.cache.save()
 
     res = ctx.api.patch(f"/time_entries/{entry_id}/restart")
@@ -110,7 +90,7 @@ def stop(cached: bool, ctx: utils.ScytheContext):
 
     entry_id = None
     if cached:
-        entry_id = ctx.cache["running_timer"]
+        entry_id = ctx.cache["running_timer"].get("id")
 
     if not entry_id:
         print("Checking Harvest for running timers...")
@@ -125,7 +105,7 @@ def stop(cached: bool, ctx: utils.ScytheContext):
         f"/time_entries/{entry_id}/stop",
     )
     utils.print_valid_response(res, "Timer Stopped!")
-    ctx.cache["running_timer"] = entry_id
+    ctx.cache["last_running_timer"] = ctx.cache.pop("running_timer")
     ctx.cache.save()
 
 
@@ -141,7 +121,7 @@ def delete(cached: bool, ctx: utils.ScytheContext):
 
     entry_id = None
     if cached:
-        entry_id = ctx.cache["running_timer"]
+        entry_id = ctx.cache["running_timer"].get("id")
 
     if not entry_id:
         payload = {"from": str(datetime.date.today())}
