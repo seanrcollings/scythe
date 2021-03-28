@@ -97,3 +97,7 @@ def parse_time(time: float):
 def format_time(hours, minutes):
     minutes_str = str(minutes) if minutes >= 10 else f"0{minutes}"
     return f"{hours}:{minutes_str}"
+
+
+def set_title(title: str):
+    sys.stdout.write(f"\x1b]2;{title}\x07")
