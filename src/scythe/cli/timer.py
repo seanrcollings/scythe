@@ -63,14 +63,13 @@ def start(last: bool, ctx: utils.ScytheContext):
         entries = ctx.api.get(f"/time_entries?from={datetime.date.today()}").json()[
             "time_entries"
         ]
-        entries = helpers.TimeEntry.from_list(entries)
+        entries = helpers.Timer.from_list(entries)
         if len(entries) == 0:
             print(f"{fg.RED}No Entries to Start{effects.CLEAR}")
             return
 
         entry_idx, _ = utils.pick_time_entry(entries)
         entry_id = entries[entry_idx].id
-        breakpoint()
         ctx.cache["running_timer"] = entries[entry_idx].data
         ctx.cache.save()
 
@@ -106,6 +105,8 @@ def stop(cached: bool, ctx: utils.ScytheContext):
     )
     utils.print_valid_response(res, "Timer Stopped!")
     ctx.cache["last_running_timer"] = ctx.cache.pop("running_timer")
+    if ctx.cache["updated_at"]:
+        ctx.cache.pop("updated_at")
     ctx.cache.save()
 
 
@@ -128,7 +129,7 @@ def delete(cached: bool, ctx: utils.ScytheContext):
         print("Fetching timers from today...")
         entries = ctx.api.get("/time_entries", params=payload).json()["time_entries"]
 
-        entries = helpers.TimeEntry.from_list(entries)
+        entries = helpers.Timer.from_list(entries)
         if len(entries) == 0:
             print(f"{fg.RED}No Entries to Delete{effects.CLEAR}")
             return
@@ -136,4 +137,6 @@ def delete(cached: bool, ctx: utils.ScytheContext):
         entry_id = entries[entry_idx].id
 
     res = ctx.api.delete(f"/time_entries/{entry_id}")
+    ctx.cache.pop("running_timer")
+    ctx.cache.save()
     utils.print_valid_response(res, "Timer Deleted")

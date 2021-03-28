@@ -3,19 +3,17 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import wrap
-from typing import Optional, TYPE_CHECKING
-import datetime
-
+from typing import TYPE_CHECKING, Optional
 
 import requests
-import yaml
+from arc import Context
 from arc.color import effects, fg
 from arc.errors import ExecutionError
-from arc.utils import logger
-from arc import Context
 
-from .ui import menu
+from .cache import Cache
 from .harvest_api import HarvestApi
+from .sync import Sync
+from .ui import menu
 
 if TYPE_CHECKING:
     from .helpers import Project
@@ -45,57 +43,12 @@ class Config:
         return Config(**data)
 
 
-class Cache:
-    NOT_LOADED = ExecutionError("Cache not yet loaded")
-
-    def __init__(self, file: Path):
-        self.cache_file = file
-        self._data: dict = {}
-        self.loaded = False
-
-    # Dictionary Pass through functions
-    def __getitem__(self, item):
-        self.load()
-        return self._data.get(item)
-
-    def __setitem__(self, key, value):
-        self.load()
-        self._data[key] = value
-
-    def __delitem__(self, key):
-        self.load()
-        del self._data[key]
-
-    def pop(self, value):
-        self.load()
-        return self._data.pop(value)
-
-    def save(self):
-        logger.debug("%sWriting cache...%s", fg.YELLOW, effects.CLEAR)
-        with open(self.cache_file, "w") as file:
-            file.write(yaml.dump(self._data))
-
-    def load(self):
-        if not self.loaded:
-            logger.debug("%sLoading Cache%s", fg.YELLOW, effects.CLEAR)
-            self._data = self.__load()
-            self.loaded = True
-
-    def __load(self):
-        try:
-            file = open(self.cache_file, "r")
-            data: dict = yaml.load(file, yaml.Loader)
-            file.close()
-        except FileNotFoundError:
-            data = {}
-        return data or {}
-
-
 class ScytheContext(Context):
     api: HarvestApi
     config: Config
     cache: Cache
     projects: Optional[list["Project"]]
+    syncer: Sync
 
 
 def handle_response(res: requests.Response):
@@ -142,24 +95,5 @@ def parse_time(time: float):
 
 
 def format_time(hours, minutes):
-    minutes_str = str(minutes) if minutes > 10 else f"0{minutes}"
+    minutes_str = str(minutes) if minutes >= 10 else f"0{minutes}"
     return f"{hours}:{minutes_str}"
-
-
-def sync_running_timer(api: HarvestApi, cache: Cache, force: bool = False):
-    last_sync: Optional[datetime.datetime] = cache["last_sync"]
-    if not last_sync:
-        last_sync = datetime.datetime.strptime(
-            "1900-01-01 0:0:0.0", "%Y-%m-%d %H:%M:%S.%f"
-        )
-
-    difference = datetime.datetime.now() - last_sync
-    breakpoint()
-    if difference.seconds >= 3000 or difference.days > 0 or force:
-        new_timer = api.get_running_timer()
-        if new_timer:
-            cache["running_timer"] = new_timer
-        elif cache["running_timer"]:
-            del cache["running_timer"]
-        cache["last_sync"] = datetime.datetime.now()
-        cache.save()

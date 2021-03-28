@@ -1,10 +1,14 @@
+import datetime
 import json
 from arc import namespace
 
-
-from .. import utils, decos, ui
+from .. import utils, decos, ui, helpers
 
 running = namespace("running")
+
+
+def hours_minutes(td: datetime.timedelta):
+    return td.seconds // 3600, (td.seconds // 60) % 60
 
 
 @running.base(context={})
@@ -33,11 +37,18 @@ def base(ctx: utils.ScytheContext, big: bool, clock_only: bool, interval: int = 
 # each call, increase the current time in the cache and update the last time updated to NOW
 # Every x amount of minutes, recall the api to assert that we're still in sync
 # Possibly update the above command to do the same?
+HARVEST_LOGO = '<span background="#f36c00" foreground="#fff" weight="bold"> H </span>'
+
+
 @running.subcommand()
 @decos.config_required
 def waybar(ctx: utils.ScytheContext):
+    """\
+    Outputs a JSON encoded representation of
+    the currently running timer to be used with
+    waybar (https://github.com/Alexays/Waybar)
+    """
     timer = ctx.cache["running_timer"]
-    harvest_logo = '<span size="larger" background="#f36c00" foreground="#fff" weight="bold"> H </span>'
     if not timer:
         print(
             json.dumps(
@@ -50,18 +61,28 @@ def waybar(ctx: utils.ScytheContext):
             ),
             end="",
         )
-    else:
-        print(
-            json.dumps(
-                {
-                    "text": f'{harvest_logo} {utils.format_time(*utils.parse_time(timer["hours"]))}',
-                    "alt": "",
-                    "class": "active",
-                    "tooltip": f"{timer['task']['name']} - {timer['notes']}",
-                    "percentage": 0,
-                }
-            ),
-            end="",
-        )
+        return
+    timer = helpers.Timer(timer)
+    now = datetime.datetime.now().time()
+    updated_at = ctx.cache.updated_at("running_timer")
+    # We convert the times all into minutes and get the difference between them
+    # Then we divide it by 60 to get the minutes as a % of an hour, which is
+    # the way that Harvest stores their timers
+    minutes_delta = (
+        (now.hour * 60 + now.minute) - (updated_at.hour * 60 + updated_at.minute)
+    ) / 60
 
-    utils.sync_running_timer(ctx.api, ctx.cache)
+    hours, minutes = utils.parse_time(timer.hours + minutes_delta)
+
+    print(
+        json.dumps(
+            {
+                "text": f"{HARVEST_LOGO} {utils.format_time(hours, minutes)}",
+                "alt": "",
+                "class": "active",
+                "tooltip": f"{timer.task['name']} - {timer.notes}",
+                "percentage": 0,
+            }
+        ),
+        end="",
+    )

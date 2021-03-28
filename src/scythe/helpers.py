@@ -1,4 +1,5 @@
 """Helper Classes to abstract away some of the complexity of the returned objects"""
+from datetime import datetime
 
 
 class DictWrapper:
@@ -33,8 +34,12 @@ class Task(DictWrapper):
         super().__init__(task | ext)
 
 
-class TimeEntry(DictWrapper):
-    ...
+class Timer(DictWrapper):
+    def __init__(self, timer: dict):
 
-
-# def __init__(self, entry: dict):
+        self.started_at = (
+            datetime.strptime(timer["started_time"], "%I:%M%p").time()
+            if timer["started_time"]
+            else None
+        )
+        super().__init__(timer)

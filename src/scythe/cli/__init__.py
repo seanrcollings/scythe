@@ -1,23 +1,25 @@
-from typing import Any
-from collections import namedtuple
 import os
+from collections import namedtuple
+from typing import Any
 
-from arc import CLI, Context, namespace, CommandType as ct
+from arc import CLI
+from arc import CommandType as ct
+from arc import Context, namespace
 from arc.color import effects, fg
 from arc.errors import ExecutionError
 
-from .. import cache_file, config_file, utils
-from .. import decos
+from .. import cache_file, config_file, decos, utils
+from ..cache import Cache
 from ..harvest_api import HarvestApi
+from ..sync import Sync
 from ..utils import ScytheContext
+from .atomic import atomic
 from .projects import projects
 from .stats import stats
 from .timer import timer
-from .atomic import atomic
-
 
 cli_context: dict[str, Any] = {}
-cli_context["cache"] = utils.Cache(cache_file)
+cli_context["cache"] = Cache(cache_file)
 
 if config_file.exists():
     # Any scripts that need access should use
@@ -25,6 +27,14 @@ if config_file.exists():
     config = utils.Config.from_file(config_file)
     cli_context["config"] = config
     cli_context["api"] = HarvestApi(config.token, config.account_id)
+    cli_context["syncer"] = Sync(
+        cli_context["api"],
+        cli_context["cache"],
+        projects=lambda api: api.get_projects(config.user_id).json()[
+            "project_assignments"
+        ],
+        running_timer=lambda api: api.get_running_timer(),
+    )
 
 
 cli = CLI(context=cli_context)
@@ -113,8 +123,8 @@ def delete(key: str, ctx: ScytheContext):
 
 @cli.command()
 def sync(ctx: ScytheContext):
-    utils.sync_running_timer(ctx.api, ctx.cache)
-    print("Synced with Harvest!")
+    """Syncs all the cache contents with Harvest"""
+    ctx.syncer.sync_all()
 
 
 if __file__ == "__main__":
