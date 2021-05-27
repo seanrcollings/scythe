@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from textwrap import wrap
 from typing import TYPE_CHECKING, Optional
+import re
 
 import requests
 from arc import Context
@@ -101,3 +102,9 @@ def format_time(hours, minutes):
 
 def set_title(title: str):
     sys.stdout.write(f"\x1b]2;{title}\x07")
+
+
+def clean(string):
+    """Gets rid of escape sequences"""
+    ansi_escape = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]")
+    return ansi_escape.sub("", str(string))

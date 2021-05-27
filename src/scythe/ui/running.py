@@ -57,7 +57,7 @@ class Running(UI):
         )
 
         self.content.clear()
-        self.content.addstr(str(time_display))
+        self.content.addstr(utils.clean(time_display))
         self.content.noutrefresh()
 
         # if clock_only:

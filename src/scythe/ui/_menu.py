@@ -4,6 +4,7 @@ from arc.present import Box
 from .ui import UI
 from .main import run
 from .data_types import *
+from .. import utils
 
 
 class Menu(UI[tuple[int, str]]):
@@ -29,10 +30,13 @@ class Menu(UI[tuple[int, str]]):
         for idx, item in enumerate(self.items):
             if idx == self.selected_index:
                 self.content.addstr(
-                    str(Box(f"({idx}) {item}", color="")) + "\n", curses.color_pair(1)
+                    utils.clean(Box(f"({idx}) {item}", color="")) + "\n",
+                    curses.color_pair(1),
                 )
             else:
-                self.content.addstr(str(Box(f"({idx}) {item}", color="")) + "\n")
+                self.content.addstr(
+                    utils.clean(Box(f"({idx}) {item}", color="")) + "\n"
+                )
 
 
 def menu(items: list):

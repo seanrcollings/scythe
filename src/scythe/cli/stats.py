@@ -24,7 +24,7 @@ def get_breakdown_str(projects: list[dict], heading_string: str):
 
     total_time_display = (
         f"{fg.GREEN}"
-        f"{Box(clock(total_hours, total_minutes), justify='center', color='')}"
+        f"{utils.clean(Box(clock(total_hours, total_minutes), justify='center'))}"
         f"{effects.CLEAR}"
     )
     breakdown_display = Table(
