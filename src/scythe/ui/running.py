@@ -1,6 +1,6 @@
 import time
 
-from arc.formatters import Box
+from arc.present import Box
 
 from ..clock import clock
 from .ui import UI
@@ -46,13 +46,14 @@ class Running(UI):
             self.content.addstr("Loading...")
             return
 
-        entry = helpers.TimeEntry(self.entry)
+        entry = helpers.Timer(self.entry)
         hours, minutes = utils.parse_time(entry.hours)
 
         time_display = Box(
             f"{clock(hours, minutes, self.size)}",
             justify="center",
             padding={"top": 2, "bottom": 2, "left": 4, "right": 4},
+            color="",
         )
 
         self.content.clear()

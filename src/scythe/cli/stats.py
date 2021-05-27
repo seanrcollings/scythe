@@ -2,7 +2,7 @@ import datetime
 import subprocess
 
 from arc import namespace, Context
-from arc.formatters import Box, Table
+from arc.present import Box, Table
 from arc.color import fg, effects
 
 from ..clock import clock
@@ -24,13 +24,12 @@ def get_breakdown_str(projects: list[dict], heading_string: str):
 
     total_time_display = (
         f"{fg.GREEN}"
-        f"{Box(clock(total_hours, total_minutes), justify='center')}"
+        f"{Box(clock(total_hours, total_minutes), justify='center', color='')}"
         f"{effects.CLEAR}"
     )
     breakdown_display = Table(
         ["Project Name", "Time"],
         [(project["project_name"], project["total_hours"]) for project in projects],
-        column_width=40,
     )
 
     return f"{heading_string}\nTotal Hours Worked:\n{total_time_display}\n{breakdown_display}"

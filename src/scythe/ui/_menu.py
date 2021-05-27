@@ -1,5 +1,5 @@
 import curses
-from arc.formatters import Box
+from arc.present import Box
 
 from .ui import UI
 from .main import run
@@ -29,10 +29,10 @@ class Menu(UI[tuple[int, str]]):
         for idx, item in enumerate(self.items):
             if idx == self.selected_index:
                 self.content.addstr(
-                    str(Box(f"({idx}) {item}")) + "\n", curses.color_pair(1)
+                    str(Box(f"({idx}) {item}", color="")) + "\n", curses.color_pair(1)
                 )
             else:
-                self.content.addstr(str(Box(f"({idx}) {item}")) + "\n")
+                self.content.addstr(str(Box(f"({idx}) {item}", color="")) + "\n")
 
 
 def menu(items: list):
