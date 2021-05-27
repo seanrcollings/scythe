@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scythe-cli"
-version = "0.7.0"
+version = "0.7.2"
 description = "A Harvest is always better with a good tool"
 authors = ["Sean Collings <seanrcollings@gmail.com>"]
 license = "MIT"
@@ -13,7 +13,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.9"
 requests = "^2.25.1"
-arc-cli = "^2.0.1"
+arc-cli = "^2.3.0"
 PyYAML = "^5.4.1"
 
 [tool.poetry.dev-dependencies]
