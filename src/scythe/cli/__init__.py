@@ -3,7 +3,7 @@ from collections import namedtuple
 from typing import Any
 
 from arc import CLI
-from arc import CommandType as ct
+from arc import ParsingMethod as pm
 from arc import Context, namespace
 from arc.color import effects, fg
 from arc.errors import ExecutionError
@@ -108,7 +108,7 @@ def clear(ctx: ScytheContext):
     print("Cache cleared")
 
 
-@cache_cmd.subcommand(command_type=ct.POSITIONAL)
+@cache_cmd.subcommand(parsing_method=pm.POSITIONAL)
 def delete(key: str, ctx: ScytheContext):
     """\
     Delete an object from the cache

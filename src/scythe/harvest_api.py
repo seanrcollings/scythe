@@ -1,6 +1,6 @@
 from typing import Union
 import datetime
-from arc.utils import logger
+from arc.logging import logger
 import requests
 
 

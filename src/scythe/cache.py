@@ -6,7 +6,7 @@ from typing import Callable
 import yaml
 from arc.color import effects, fg
 from arc.errors import ExecutionError
-from arc.utils import logger
+from arc.logging import logger
 
 
 empty_cache: Callable[[], dict[str, dict]] = lambda: {
