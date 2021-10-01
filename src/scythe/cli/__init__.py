@@ -3,7 +3,6 @@ from collections import namedtuple
 from typing import Any
 
 from arc import CLI
-from arc import ParsingMethod as pm
 from arc import Context, namespace
 from arc.color import effects, fg
 from arc.errors import ExecutionError
@@ -37,7 +36,7 @@ if config_file.exists():
     )
 
 
-cli = CLI(context=cli_context)
+cli = CLI(name="scythe", context=cli_context)
 cli.install_commands(timer, projects, stats, atomic)
 
 
@@ -47,11 +46,9 @@ def init(token: str, accid: int):
     Used to write your Harvest
     ID and Access Token to the configuration file
 
-    Arguments:
-    token=TOKEN  Harvest Account token generated
-                 at https://id.getharvest.com/developers
-    accid=ID     Harvest Account ID to be
-                 sent with every request
+    # Arguments
+    <TOKEN>  Harvest Account token generated at https://id.getharvest.com/developers
+    <ID>     Harvest Account ID to be sent with every request
     """
     print("Checking a call can be made with the provided data...")
     init_api = HarvestApi(token, accid)
@@ -108,7 +105,7 @@ def clear(ctx: ScytheContext):
     print("Cache cleared")
 
 
-@cache_cmd.subcommand(parsing_method=pm.POSITIONAL)
+@cache_cmd.subcommand()
 def delete(key: str, ctx: ScytheContext):
     """\
     Delete an object from the cache

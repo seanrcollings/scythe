@@ -1,4 +1,5 @@
 import datetime
+import logging
 from pathlib import Path
 from typing import Callable
 
@@ -6,7 +7,8 @@ from typing import Callable
 import yaml
 from arc.color import effects, fg
 from arc.errors import ExecutionError
-from arc.logging import logger
+
+logger = logging.getLogger("arc_logger")
 
 
 empty_cache: Callable[[], dict[str, dict]] = lambda: {

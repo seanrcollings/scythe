@@ -13,7 +13,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.9"
 requests = "^2.25.1"
-arc-cli = "^3.0.0"
+arc-cli = "5.0.0b1"
 PyYAML = "^5.4.1"
 
 [tool.poetry.dev-dependencies]

@@ -34,9 +34,7 @@ def get_projects(func):
         api: HarvestApi = context.api
 
         if (projects := cache["projects"]) is None:
-            projects = api.get_projects(context.config.user_id).json()[
-                "project_assignments"
-            ]
+            projects = api.get_projects().json()["project_assignments"]
             cache["projects"] = projects
             cache.save()
 

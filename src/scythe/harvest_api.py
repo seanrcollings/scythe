@@ -1,7 +1,10 @@
+import logging
 from typing import Union
 import datetime
-from arc.logging import logger
+
 import requests
+
+logger = logging.getLogger("arc_logger")
 
 
 class HarvestApi(requests.Session):
@@ -37,8 +40,8 @@ class HarvestApi(requests.Session):
     def me(self):
         return self.get("/users/me")
 
-    def get_projects(self, user_id: int) -> requests.Response:
-        return self.get(f"/users/{user_id}/project_assignments")
+    def get_projects(self) -> requests.Response:
+        return self.get("/users/me/project_assignments")
 
     def get_running_timer(self):
         timers = self.get("/time_entries?is_running=true").json()["time_entries"]

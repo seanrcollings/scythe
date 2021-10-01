@@ -1,19 +1,17 @@
 import datetime
 import json
-from arc import namespace
+from arc import namespace, command
 
 from .. import utils, decos, ui, helpers
-
-running = namespace("running")
 
 
 def hours_minutes(td: datetime.timedelta):
     return td.seconds // 3600, (td.seconds // 60) % 60
 
 
-@running.base()
+@command()
 @decos.config_required
-def base(ctx: utils.ScytheContext, big: bool, clock_only: bool, interval: int = 10):
+def running(ctx: utils.ScytheContext, big: bool, clock_only: bool, interval: int = 10):
     """\
     Displays the currently running timer
 
