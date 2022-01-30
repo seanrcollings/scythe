@@ -1,29 +1,30 @@
 [tool.poetry]
 name = "scythe-cli"
-version = "0.8.0"
+version = "0.8.1"
 description = "A Harvest is always better with a good tool"
 authors = ["Sean Collings <seanrcollings@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/seanrcollings/scythe"
-packages = [
-    {include = "scythe", from = "src"}
-]
 
 [tool.poetry.dependencies]
 python = "^3.9"
 requests = "^2.25.1"
-arc-cli = "5.0.0b1"
+arc-cli = "6.3.0b1"
 PyYAML = "^5.4.1"
+xdg = "^5.1.1"
+pydantic = "^1.9.0"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
 mypy = "^0.800"
 pylint = "^2.7.0"
+types-requests = "^2.27.7"
+types-PyYAML = "^6.0.3"
 
 
 [tool.poetry.scripts]
-scythe = "scythe.cli:cli"
+scythe = "scythe_cli.application:cli"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

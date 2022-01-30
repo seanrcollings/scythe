@@ -11,10 +11,6 @@ from arc import Context
 from arc.color import effects, fg
 from arc.errors import ExecutionError
 
-from .cache import Cache
-from .harvest_api import HarvestApi
-from .sync import Sync
-from .ui import menu
 
 if TYPE_CHECKING:
     from .helpers import Project
@@ -42,14 +38,6 @@ class Config:
                 data[key] = value
 
         return Config(**data)
-
-
-class ScytheContext(Context):
-    api: HarvestApi
-    config: Config
-    cache: Cache
-    projects: Optional[list["Project"]]
-    syncer: Sync
 
 
 def handle_response(res: requests.Response):
