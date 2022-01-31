@@ -1,3 +1,4 @@
+import typing as t
 from datetime import datetime
 import shelve
 
@@ -35,7 +36,16 @@ class Cache:
         self.cache.close()
 
     def get(self, key):
-        return self.cache.get(key)
+        data = self.cache.get(key)
+        if data:
+            return data["value"]
+        return data
+
+    def updated_at(self, key) -> t.Optional[datetime]:
+        data = self.cache.get(key)
+        if data:
+            return data["updated_at"]
+        return data
 
     def set(self, key, value):
         self.cache[key] = value

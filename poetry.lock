@@ -8,7 +8,7 @@ python-versions = "*"
 
 [[package]]
 name = "arc-cli"
-version = "6.3.0b1"
+version = "6.3.0b2"
 description = "A Regular CLI"
 category = "main"
 optional = false
@@ -59,7 +59,7 @@ python-versions = "*"
 
 [[package]]
 name = "charset-normalizer"
-version = "2.0.10"
+version = "2.0.11"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
 category = "main"
 optional = false
@@ -272,7 +272,7 @@ types-urllib3 = "<1.27"
 
 [[package]]
 name = "types-urllib3"
-version = "1.26.7"
+version = "1.26.8"
 description = "Typing stubs for urllib3"
 category = "dev"
 optional = false
@@ -318,7 +318,7 @@ python-versions = ">=3.6,<4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "49333c27bd5519f8e2bce4106b315cf010ec7a7ffb65ca5fc97398298decc7aa"
+content-hash = "681b61cca4898f29a38377fb129fe16b674a0d52e293abee6e411fa9bc0f35e7"
 
 [metadata.files]
 appdirs = [
@@ -326,8 +326,8 @@ appdirs = [
     {file = "appdirs-1.4.4.tar.gz", hash = "sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41"},
 ]
 arc-cli = [
-    {file = "arc-cli-6.3.0b1.tar.gz", hash = "sha256:4665931b26d21aadbd10c825cd58bbf687b56608d8f127f5837550d3515c3760"},
-    {file = "arc_cli-6.3.0b1-py3-none-any.whl", hash = "sha256:8b62ba572ff2b0c4d49ba577058b2a6f6c16cacc29708e6b905dee6111f37604"},
+    {file = "arc-cli-6.3.0b2.tar.gz", hash = "sha256:dfc78f496661ee7f7bcbd827a1985c7da7b2e087ffcc032834a87de51af124e8"},
+    {file = "arc_cli-6.3.0b2-py3-none-any.whl", hash = "sha256:65084246b434f07648f1fea24083f15b892e25bfd6259367fcc938e927aa9361"},
 ]
 astroid = [
     {file = "astroid-2.9.3-py3-none-any.whl", hash = "sha256:506daabe5edffb7e696ad82483ad0228245a9742ed7d2d8c9cdb31537decf9f6"},
@@ -341,8 +341,8 @@ certifi = [
     {file = "certifi-2021.10.8.tar.gz", hash = "sha256:78884e7c1d4b00ce3cea67b44566851c4343c120abd683433ce934a68ea58872"},
 ]
 charset-normalizer = [
-    {file = "charset-normalizer-2.0.10.tar.gz", hash = "sha256:876d180e9d7432c5d1dfd4c5d26b72f099d503e8fcc0feb7532c9289be60fcbd"},
-    {file = "charset_normalizer-2.0.10-py3-none-any.whl", hash = "sha256:cb957888737fc0bbcd78e3df769addb41fd1ff8cf950dc9e7ad7793f1bf44455"},
+    {file = "charset-normalizer-2.0.11.tar.gz", hash = "sha256:98398a9d69ee80548c762ba991a4728bfc3836768ed226b3945908d1a688371c"},
+    {file = "charset_normalizer-2.0.11-py3-none-any.whl", hash = "sha256:2842d8f5e82a1f6aa437380934d5e1cd4fcf2003b06fed6940769c164a480a45"},
 ]
 click = [
     {file = "click-8.0.3-py3-none-any.whl", hash = "sha256:353f466495adaeb40b6b5f592f9f91cb22372351c84caeb068132442a4518ef3"},
@@ -636,8 +636,8 @@ types-requests = [
     {file = "types_requests-2.27.7-py3-none-any.whl", hash = "sha256:2e0e100dd489f83870d4f61949d3a7eae4821e7bfbf46c57e463c38f92d473d4"},
 ]
 types-urllib3 = [
-    {file = "types-urllib3-1.26.7.tar.gz", hash = "sha256:cfd1fbbe4ba9a605ed148294008aac8a7b8b7472651d1cc357d507ae5962e3d2"},
-    {file = "types_urllib3-1.26.7-py3-none-any.whl", hash = "sha256:3adcf2cb5981809091dbff456e6999fe55f201652d8c360f99997de5ac2f556e"},
+    {file = "types-urllib3-1.26.8.tar.gz", hash = "sha256:aa0de26893f138523d5552bbb023826c0cc7ea5749d80c1693c57aab7b55f469"},
+    {file = "types_urllib3-1.26.8-py3-none-any.whl", hash = "sha256:a929c68a57b24eee8f7003357b935b802e17767e752d9237266f799ca48ee326"},
 ]
 typing-extensions = [
     {file = "typing_extensions-4.0.1-py3-none-any.whl", hash = "sha256:7f001e5ac290a0c0401508864c7ec868be4e701886d5b573a9528ed3973d9d3b"},
