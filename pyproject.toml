@@ -10,10 +10,11 @@ homepage = "https://github.com/seanrcollings/scythe"
 [tool.poetry.dependencies]
 python = "^3.9"
 requests = "^2.25.1"
-arc-cli = "6.3.0b2"
 PyYAML = "^5.4.1"
 xdg = "^5.1.1"
 pydantic = "^1.9.0"
+arc-cli = {version = "^6.3.0b2", allow-prereleases = true}
+
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"

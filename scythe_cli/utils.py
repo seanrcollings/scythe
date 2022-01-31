@@ -1,4 +1,9 @@
 import typing as t
+from arc.types import State
+import pydantic
+
+from scythe_cli.cache import Cache
+from scythe_cli.harvest_api import Harvest
 
 T = t.TypeVar("T")
 
@@ -32,3 +37,16 @@ class Columns:
                 string += " " * self.padding
             string += "\n"
         return string
+
+
+class Config(pydantic.BaseSettings):
+    token: str
+    account_id: str
+    user_id: str
+    extensions: t.Optional[dict] = None
+
+
+class ScytheState(State):
+    config: Config
+    harvest: Harvest
+    cache: Cache
