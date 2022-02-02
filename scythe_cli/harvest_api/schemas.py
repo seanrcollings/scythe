@@ -84,12 +84,12 @@ class TimeEntry(pydantic.BaseModel):
     notes: t.Optional[str]
     is_locked: float
     locked_reason: t.Optional[str]
-    is_closed: float
-    is_billed: float
+    is_closed: bool
+    is_billed: bool
     timer_started_at: t.Optional[datetime]
     started_time: t.Optional[time]
     ended_time: t.Optional[time]
-    is_running: float
+    is_running: bool
     billable: float
     budgeted: float
     billable_rate: t.Optional[float]
@@ -115,25 +115,31 @@ class TimeEntry(pydantic.BaseModel):
 
         hour, minutes = (int(x) for x in v[0:-2].split(":"))
         day_period = v[-2:]
-        if day_period == "pm":
+        if day_period == "pm" and hour > 12:
             hour += 12
 
         return f"{hour}:{minutes}"
 
 
-class TimeEntryParams(t.TypedDict):
-    user_id: int
-    client_id: int
-    project_id: int
-    task_id: int
-    external_reference_id: str
-    is_billed: bool
-    is_running: bool
-    updated_since: datetime
-    # from:	date
-    to: date
-    page: int
-    per_page: int
+# Because 'from' is a reserved keyword
+TimeEntryParams = t.TypedDict(
+    "TimeEntryParams",
+    {
+        "user_id": int,
+        "client_id": int,
+        "project_id": int,
+        "task_id": int,
+        "external_reference_id": str,
+        "is_billed": bool,
+        "is_running": bool,
+        "updated_since": datetime,
+        "from": date,
+        "to": date,
+        "page": int,
+        "per_page": int,
+    },
+    total=False,
+)
 
 
 class TaskAssignment(pydantic.BaseModel):

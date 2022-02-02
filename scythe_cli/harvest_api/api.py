@@ -78,7 +78,7 @@ class RecordCollection(t.Generic[T]):
     ):
         self._values = values
         self._session = session
-        self._schema = type(self._values[0])
+        self._schema = type(self._values[0]) if self._values else None
         self._pagination_key = pagination_key
         self.page = page
         self.total_pages = total_pages
@@ -100,18 +100,21 @@ class RecordCollection(t.Generic[T]):
         yield from self._values
 
     def __next__(self):
-        data = self._session.get(self.links["next"]).json()
-        return RecordCollection(
-            values=[self._schema(**item) for item in data[self._pagination_key]],
-            session=self._session,
-            pagination_key=self._pagination_key,
-            page=data["page"],
-            total_pages=data["total_pages"],
-            total_entries=data["total_entries"],
-            next_page=data["next_page"],
-            previous_page=data["previous_page"],
-            links=data["links"],
-        )
+        next_link = self.links.get("next")
+        if next_link:
+            data = self._session.get(self.links["next"]).json()
+            return RecordCollection(
+                values=[self._schema(**item) for item in data[self._pagination_key]],
+                session=self._session,
+                pagination_key=self._pagination_key,
+                page=data["page"],
+                total_pages=data["total_pages"],
+                total_entries=data["total_entries"],
+                next_page=data["next_page"],
+                previous_page=data["previous_page"],
+                links=data["links"],
+            )
+        raise StopIteration()
 
     def more(self) -> bool:
         return self.next_page is not None
@@ -130,8 +133,12 @@ class Record(t.Generic[T, P]):
         self.pagination_key = pagination_key
         self.schema = schema
 
-    def list(self) -> RecordCollection[T]:
-        data = self.session.get(self.endpoint).json()
+    def list(self, params: t.Optional[P] = None) -> RecordCollection[T]:
+        kwargs = {}
+        if params:
+            kwargs["params"] = params
+
+        data = self.session.get(self.endpoint, **kwargs).json()
         return RecordCollection(
             values=[self.schema(**item) for item in data[self.pagination_key]],
             session=self.session,
@@ -159,7 +166,7 @@ class Record(t.Generic[T, P]):
         )
 
     def delete(self, id: int):
-        return self.schema(**self.session.patch(f"{self.endpoint}/{id}").json())
+        return self.schema(**self.session.delete(f"{self.endpoint}/{id}").json())
 
 
 class TimeEntryRecord(Record[schemas.TimeEntry, schemas.TimeEntryParams]):

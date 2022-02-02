@@ -8,7 +8,7 @@ from scythe_cli.harvest_api import Harvest
 T = t.TypeVar("T")
 
 
-def exist_or_exit(val: T, ctx) -> T:
+def exist_or_exit(val: T, ctx) -> tuple:
     if val is None:
         ctx.exit()
 

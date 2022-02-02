@@ -1,3 +1,4 @@
+import datetime as dt
 import yaml
 from arc import CLI, errors, Argument, Context
 from arc.color import fg, effects, colorize
@@ -9,7 +10,7 @@ from .. import constants
 from .timer import timer
 from ..cache import Cache
 
-cli = CLI(env="development")
+cli = CLI()
 cli.install_command(timer)
 
 
@@ -23,7 +24,7 @@ def setup(args, ctx: Context):
         ctx.state.config = utils.Config(**yaml.load(f, yaml.CLoader))
 
     ctx.state.harvest = Harvest(ctx.state.config.token, ctx.state.config.account_id)
-    ctx.state.cache = ctx.resource(Cache(str(constants.CACHE_FILE)))
+    ctx.state.cache = Cache(str(constants.CACHE_FILE), dt.timedelta(minutes=5))
 
     yield
 
@@ -75,6 +76,7 @@ def init(
 
 @cli.command()
 def whoami(state: utils.ScytheState):
+    """Prints out info about the currently authenticated user"""
     user = state.harvest.me()
 
     for key, value in user.dict().items():
@@ -99,5 +101,6 @@ def projects(state: utils.ScytheState):
 
 @cli.command()
 def sync(state: utils.ScytheState):
-    cache = state.cache
-    cache["project_assignments"] = state.harvest.project_assignments.list()
+    with state.cache as cache:
+        cache["project_assignments"] = state.harvest.project_assignments.list()
+        cache["running_timer"] = state.harvest.time_entires.running()
