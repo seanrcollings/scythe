@@ -1,6 +1,6 @@
 import datetime as dt
 import yaml
-from arc import CLI, errors, Argument, Context
+from arc import CLI, errors, Argument, Context, logging
 from arc.color import fg, effects, colorize
 
 from scythe_cli import utils
@@ -25,6 +25,7 @@ def setup(args, ctx: Context):
 
     ctx.state.harvest = Harvest(ctx.state.config.token, ctx.state.config.account_id)
     ctx.state.cache = Cache(str(constants.CACHE_FILE), dt.timedelta(minutes=5))
+    ctx.state.logger = logging.getAppLogger("scythe")
 
     yield
 

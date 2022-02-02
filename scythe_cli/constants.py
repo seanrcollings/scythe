@@ -1,16 +1,21 @@
+import os
 from pathlib import Path
 from arc import color
 import xdg
 
 PROJECT_ROOT = Path(__file__).parent.parent
-CONFIG_DIR = PROJECT_ROOT / "config"
-CONFIG_FILE = CONFIG_DIR / "config.yaml"
-CACHE_FILE: Path = CONFIG_DIR / "scythe.cache"
-# CONFIG_DIR = xdg.xdg_config_home() / "scythe"
-# CONFIG_FILE = CONFIG_DIR / "config.yaml"
-# CACHE_FILE: Path = xdg.xdg_cache_home() / "scythe.cache"
 FG_ORANGE = color.fg.rgb(243, 108, 0)
 BG_ORANGE = color.bg.rgb(243, 108, 0)
+
+if os.getenv("SCYTHE_DEVELOPMENT"):
+    CONFIG_DIR = PROJECT_ROOT / "config"
+    CONFIG_FILE = CONFIG_DIR / "config.yaml"
+    CACHE_FILE = CONFIG_DIR / "scythe.cache"
+else:
+    CONFIG_DIR = xdg.xdg_config_home() / "scythe"
+    CONFIG_FILE = CONFIG_DIR / "config.yaml"
+    CACHE_FILE = xdg.xdg_cache_home() / "scythe-cli.cache"
+
 
 # 40 x 21
 SCYTHE = """\

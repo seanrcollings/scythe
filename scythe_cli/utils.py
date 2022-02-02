@@ -1,3 +1,4 @@
+from logging import Logger
 import typing as t
 from arc.types import State
 import pydantic
@@ -50,3 +51,4 @@ class ScytheState(State):
     config: Config
     harvest: Harvest
     cache: Cache
+    logger: Logger
