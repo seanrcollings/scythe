@@ -103,7 +103,7 @@ def timer(
 
     note = ctx.prompt.input("Enter a note:", empty=False)
 
-    state.harvest.time_entires.create(
+    timer = state.harvest.time_entires.create(
         {
             "project_id": project.id,
             "task_id": task.id,
@@ -112,6 +112,10 @@ def timer(
             "hours": duration,
         }
     )
+
+    if duration == 0:
+        with state.cache as cache:
+            cache["running_timer"] = timer
 
     ctx.prompt.ok("Timer created!")
 
