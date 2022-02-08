@@ -4,6 +4,8 @@ from datetime import date, datetime, time
 
 import pydantic
 
+from scythe_cli import utils
+
 
 class User(pydantic.BaseModel):
     id: int
@@ -98,10 +100,7 @@ class TimeEntry(pydantic.BaseModel):
     updated_at: datetime
 
     def time(self) -> tuple[int, int]:
-        minutes, hours = math.modf(self.hours)
-        minutes = math.floor(round(minutes, 2) * 60)
-        hours = int(hours)
-        return hours, minutes
+        return utils.get_hours_and_minutes(self.hours)
 
     def fmt_time(self) -> str:
         hours, minutes = self.time()

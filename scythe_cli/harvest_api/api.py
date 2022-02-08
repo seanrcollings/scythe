@@ -162,7 +162,7 @@ class Record(t.Generic[T, P]):
 
     def update(self, id: int, data: dict) -> T:
         return self.schema(
-            **self.session.patch(f"{self.endpoint}/{id}", json=data).json()
+            **self.session.put(f"{self.endpoint}/{id}", json=data).json()
         )
 
     def delete(self, id: int):
@@ -181,9 +181,6 @@ class TimeEntryRecord(Record[schemas.TimeEntry, schemas.TimeEntryParams]):
 
     def stop(self, id: int) -> schemas.TimeEntry:
         return self.schema(**self.session.patch(f"/time_entries/{id}/stop").json())
-
-
-# TODO: Integrate the cache directly into the API?
 
 
 class Harvest:
@@ -210,27 +207,3 @@ class Harvest:
 
     def me(self) -> schemas.User:
         return schemas.User(**self.session.get("/users/me").json())
-
-        # def me(self):
-
-    #     return self.get("/users/me")
-
-    # def get_projects(self) -> requests.Response:
-    #     return self.get("/users/me/project_assignments")
-
-    # def get_running_timer(self):
-    #     timers = self.get("/time_entries?is_running=true").json()["time_entries"]
-    #     return timers[0] if len(timers) > 0 else None
-
-    # def create_timer(
-    #     self, project_id, task_id, notes: str = "", spent_date=datetime.date.today()
-    # ):
-    #     return self.post(
-    #         "/time_entries",
-    #         {
-    #             "project_id": project_id,
-    #             "task_id": task_id,
-    #             "spent_date": str(spent_date),
-    #             "notes": notes,
-    #         },
-    #     )

@@ -1,6 +1,8 @@
 from logging import Logger
 import typing as t
 from arc.types import State
+
+import math
 import pydantic
 
 from scythe_cli.cache import Cache
@@ -14,6 +16,25 @@ def exist_or_exit(val: T, ctx) -> tuple:
         ctx.exit()
 
     return val
+
+
+def parse_time(string: str) -> float:
+    if ":" in string:
+        hours, minutes = [int(v) for v in string.split(":")]
+        return hours + (minutes / 60)
+    elif "." in string:
+        return float(string)
+    elif string.isnumeric:
+        return int(string)
+
+    raise ValueError(f"Invalid time string: {string}")
+
+
+def get_hours_and_minutes(val: float) -> tuple[int, int]:
+    minutes, hours = math.modf(val)
+    minutes = math.floor(round(minutes, 2) * 60)
+    hours = int(hours)
+    return hours, minutes
 
 
 class Columns:

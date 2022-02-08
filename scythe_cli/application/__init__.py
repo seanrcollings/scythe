@@ -12,6 +12,7 @@ from ..cache import Cache
 
 cli = CLI()
 cli.install_command(timer)
+cli.subcommand_aliases["t"] = "timer"
 
 
 @cli.callback()
@@ -84,7 +85,7 @@ def whoami(state: utils.ScytheState):
         print(f"{key}: {value}")
 
 
-@cli.command()
+@cli.command(("projects", "p"))
 def projects(state: utils.ScytheState):
     assignments = state.harvest.project_assignments.list()
     for idx, assignment in enumerate(assignments):
@@ -100,7 +101,7 @@ def projects(state: utils.ScytheState):
             print(f"\t({task_idx}) {task_assignment.task.name}")
 
 
-@cli.command()
+@cli.command(("sync", "s"))
 def sync(state: utils.ScytheState):
     with state.cache as cache:
         cache["project_assignments"] = state.harvest.project_assignments.list()
