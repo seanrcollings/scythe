@@ -104,8 +104,7 @@ class TimeEntry(pydantic.BaseModel):
 
     def fmt_time(self) -> str:
         hours, minutes = self.time()
-        minutes_str = str(minutes) if minutes >= 10 else f"0{minutes}"
-        return f"{hours}:{minutes_str}"
+        return utils.fmt_time(hours, minutes)
 
     @pydantic.validator("started_time", pre=True)
     def parse_started_time(cls, v):

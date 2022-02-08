@@ -1,7 +1,8 @@
 import datetime as dt
 import yaml
-from arc import CLI, errors, Argument, Context, logging
+from arc import CLI, errors, Argument, Context, logging, present
 from arc.color import fg, effects, colorize
+
 
 from scythe_cli import utils
 from scythe_cli.harvest_api import Harvest, RequestError
@@ -87,6 +88,8 @@ def whoami(state: utils.ScytheState):
 
 @cli.command(("projects", "p"))
 def projects(state: utils.ScytheState):
+    """Lists all projects and tasks that the current user is associated with"""
+
     assignments = state.harvest.project_assignments.list()
     for idx, assignment in enumerate(assignments):
 
@@ -103,6 +106,55 @@ def projects(state: utils.ScytheState):
 
 @cli.command(("sync", "s"))
 def sync(state: utils.ScytheState):
+    """Forces a cache sync"""
     with state.cache as cache:
         cache["project_assignments"] = state.harvest.project_assignments.list()
         cache["running_timer"] = state.harvest.time_entires.running()
+
+    print("Cache synced")
+
+
+@cli.command()
+def stats(state: utils.ScytheState):
+    delta = dt.timedelta(days=7)
+    today = dt.date.today()
+    timers = state.harvest.time_entires.list(
+        {
+            "from": today - delta,
+            "to": today,
+        }
+    )
+
+    hours = utils.fmt_time(
+        *utils.get_hours_and_minutes(sum(timer.hours for timer in timers))
+    )
+
+    monday = today - dt.timedelta(days=today.weekday())
+    week_timers = [timer for timer in timers if timer.spent_date >= monday]
+    week_hours = utils.fmt_time(
+        *utils.get_hours_and_minutes(sum(timer.hours for timer in week_timers))
+    )
+
+    yesterday = today - dt.timedelta(days=1)
+    tomorrow = today + dt.timedelta(days=1)
+    today_timers = [
+        timer for timer in timers if tomorrow > timer.spent_date > yesterday
+    ]
+    today_hours = utils.fmt_time(
+        *utils.get_hours_and_minutes(sum(timer.hours for timer in week_timers))
+    )
+
+    print(
+        present.Table(
+            [
+                "Time Period",
+                {"name": "Timers", "justify": "right", "width": 10},
+                {"name": "Hours", "justify": "right", "width": 10},
+            ],
+            [
+                ["Last 7 Days", len(timers), hours],
+                ["Current Week", len(week_timers), week_hours],
+                ["Today", len(today_timers), today_hours],
+            ],
+        )
+    )

@@ -37,6 +37,11 @@ def get_hours_and_minutes(val: float) -> tuple[int, int]:
     return hours, minutes
 
 
+def fmt_time(hours: int, minutes: int) -> str:
+    minutes_str = str(minutes) if minutes >= 10 else f"0{minutes}"
+    return f"{hours}:{minutes_str}"
+
+
 class Columns:
     def __init__(self, *vals: str, padding: int = 2):
         self.vals = [v.split("\n") for v in vals]
