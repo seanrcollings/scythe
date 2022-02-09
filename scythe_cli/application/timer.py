@@ -20,8 +20,6 @@ from ..harvest_api import Harvest
 
 T = t.TypeVar("T")
 
-SelectReturn = tuple[int, T]
-
 
 def get_running_timer(cache: Cache, harvest: Harvest):
     with cache:
@@ -67,29 +65,6 @@ def select_timer(timers, ctx: arc.Context) -> schemas.TimeEntry:
     return timers[idx]
 
 
-def select_project(assignments, ctx: arc.Context) -> tuple[schemas.Project, int]:
-    projects = [a.project for a in assignments]
-    print("Select a project:")
-    p_idx, _ = t.cast(
-        SelectReturn[str],
-        utils.exist_or_exit(prompt.select([p.name for p in projects]), ctx),
-    )
-    print()
-
-    return projects[p_idx], p_idx
-
-
-def select_task(task_assignments, ctx: arc.Context) -> tuple[schemas.Task, int]:
-    tasks = [t.task for t in task_assignments]
-    print("Select a task:")
-    t_idx, _ = t.cast(
-        SelectReturn[str],
-        utils.exist_or_exit(prompt.select([t.name for t in tasks]), ctx),
-    )
-    print()
-    return tasks[t_idx], t_idx
-
-
 @arc.command("timer")
 def timer(
     ctx: arc.Context,
@@ -124,8 +99,8 @@ def timer(
             or state.harvest.project_assignments.list(),
         )
 
-    project, p_idx = select_project(assignments, ctx)
-    task, _ = select_task(assignments[p_idx].task_assignments, ctx)
+    project, p_idx = utils.select_project(assignments, ctx)
+    task, _ = utils.select_task(assignments[p_idx].task_assignments, ctx)
 
     note = ctx.prompt.input("Enter a note:", empty=allow_empty_notes)
 
@@ -285,9 +260,9 @@ def edit(
                         state.cache.get("project_assignments")
                         or state.harvest.project_assignments.list(),
                     )
-                project, p_idx = select_project(assignments, ctx)
+                project, p_idx = utils.select_project(assignments, ctx)
 
-                task, _ = select_task(assignments[p_idx].task_assignments, ctx)
+                task, _ = utils.select_task(assignments[p_idx].task_assignments, ctx)
 
                 timer.project = project.dict()
                 timer.task = task.dict()
@@ -308,7 +283,7 @@ def edit(
 
                     idx += 1
 
-                task, _ = select_task(assignments[idx].task_assignments, ctx)
+                task, _ = utils.select_task(assignments[idx].task_assignments, ctx)
                 timer.task = task.dict()
                 params["task_id"] = task.id
 

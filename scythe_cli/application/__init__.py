@@ -1,5 +1,6 @@
 import datetime as dt
-import yaml
+import typing as t
+import oyaml as yaml  # type: ignore
 from arc import CLI, errors, Argument, Context, logging, present
 from arc.color import fg, effects, colorize
 
@@ -9,11 +10,14 @@ from scythe_cli.harvest_api import Harvest, RequestError
 from .. import constants
 
 from .timer import timer
+from .quickstart import quickstart
 from ..cache import Cache
 
 cli = CLI()
 cli.install_command(timer)
+cli.install_command(quickstart)
 cli.subcommand_aliases["t"] = "timer"
+cli.subcommand_aliases["qs"] = "quickstart"
 
 
 @cli.callback()
@@ -59,6 +63,7 @@ def init(
         "token": token,
         "account_id": account_id,
         "user_id": user.id,
+        "quickstart": {},
     }
 
     print(f"{fg.GREEN}Success!{effects.CLEAR}")
@@ -97,11 +102,14 @@ def projects(state: utils.ScytheState):
             colorize(
                 f"({idx}) {assignment.project.name}", effects.BOLD, constants.FG_ORANGE
             ),
-            colorize(f"({assignment.id})", fg.GREY),
+            colorize(f"({assignment.project.id})", fg.GREY),
         )
 
         for task_idx, task_assignment in enumerate(assignment.task_assignments):
-            print(f"\t({task_idx}) {task_assignment.task.name}")
+            print(
+                f"\t({task_idx}) {task_assignment.task.name}",
+                colorize(f"({task_assignment.task.id})", fg.GREY),
+            )
 
 
 @cli.command(("sync", "s"))
@@ -141,7 +149,7 @@ def stats(state: utils.ScytheState):
         timer for timer in timers if tomorrow > timer.spent_date > yesterday
     ]
     today_hours = utils.fmt_time(
-        *utils.get_hours_and_minutes(sum(timer.hours for timer in week_timers))
+        *utils.get_hours_and_minutes(sum(timer.hours for timer in today_timers))
     )
 
     print(

@@ -1,6 +1,9 @@
+from __future__ import annotations
 from logging import Logger
 import typing as t
 from arc.types import State
+from arc import prompt
+import arc
 
 import math
 import pydantic
@@ -8,7 +11,12 @@ import pydantic
 from scythe_cli.cache import Cache
 from scythe_cli.harvest_api import Harvest
 
+if t.TYPE_CHECKING:
+    from scythe_cli.harvest_api import schemas
+
 T = t.TypeVar("T")
+
+SelectReturn = tuple[int, T]
 
 
 def exist_or_exit(val: T, ctx) -> tuple:
@@ -42,6 +50,29 @@ def fmt_time(hours: int, minutes: int) -> str:
     return f"{hours}:{minutes_str}"
 
 
+def select_project(assignments, ctx: arc.Context) -> tuple[schemas.Project, int]:
+    projects = [a.project for a in assignments]
+    print("Select a project:")
+    p_idx, _ = t.cast(
+        SelectReturn[str],
+        exist_or_exit(prompt.select([p.name for p in projects]), ctx),
+    )
+    print()
+
+    return projects[p_idx], p_idx
+
+
+def select_task(task_assignments, ctx: arc.Context) -> tuple[schemas.Task, int]:
+    tasks = [t.task for t in task_assignments]
+    print("Select a task:")
+    t_idx, _ = t.cast(
+        SelectReturn[str],
+        exist_or_exit(prompt.select([t.name for t in tasks]), ctx),
+    )
+    print()
+    return tasks[t_idx], t_idx
+
+
 class Columns:
     def __init__(self, *vals: str, padding: int = 2):
         self.vals = [v.split("\n") for v in vals]
@@ -66,11 +97,22 @@ class Columns:
         return string
 
 
+class QuickStartTaskConfig(pydantic.BaseModel):
+    id: int
+    url: t.Optional[str]
+    notes: t.Optional[str]
+
+
+class QuickStartConfig(pydantic.BaseModel):
+    id: int
+    tasks: dict[str, t.Union[int, QuickStartTaskConfig]]
+
+
 class Config(pydantic.BaseSettings):
     token: str
     account_id: str
     user_id: str
-    extensions: t.Optional[dict] = None
+    quickstart: dict[str, QuickStartConfig]
 
 
 class ScytheState(State):
