@@ -1,15 +1,15 @@
 from __future__ import annotations
 from logging import Logger
 import typing as t
+import shutil
 from arc.types import State
-from arc import prompt
+from arc import prompt, utils
 import arc
 
 import math
-import diskcache
+import diskcache  # type: ignore
 import pydantic
 
-from scythe_cli.cache import Cache
 from scythe_cli.harvest_api import Harvest
 
 if t.TYPE_CHECKING:
@@ -77,25 +77,31 @@ def select_task(task_assignments, ctx: arc.Context) -> tuple[schemas.Task, int]:
 class Columns:
     def __init__(self, *vals: str, padding: int = 2):
         self.vals = [v.split("\n") for v in vals]
-        self.max_len = max(len(v) for v in self.vals)
+        self.height = max(len(v) for v in self.vals)
+        self.width = sum(utils.ansi_len(v[0]) for v in self.vals)
         self.padding = padding
 
     def __str__(self):
         return self.to_string()
 
     def to_string(self, show_index: bool = False):
-        string = ""
-        for i in range(0, self.max_len):
-            if show_index:
-                string += f"{i:<2} "
-            for v in self.vals:
-                if len(v) > i:
-                    string += f"{v[i]:<{len(v[0])}}"
-                else:
-                    string += " " * len(v[0])
-                string += " " * self.padding
-            string += "\n"
-        return string
+        cols, _ = shutil.get_terminal_size()
+        if cols < self.width:
+            return "\n".join("\n".join(v) for v in self.vals) + "\n"
+        else:
+            string = ""
+            for i in range(0, self.height):
+                if show_index:
+                    string += f"{i:<2} "
+                for v in self.vals:
+                    if len(v) > i:
+                        string += f"{v[i]:<{len(v[0])}}"
+                    else:
+                        string += " " * len(v[0])
+
+                    string += " " * self.padding
+                string += "\n"
+            return string
 
 
 class QuickStartTaskConfig(pydantic.BaseModel):
@@ -114,6 +120,7 @@ class Config(pydantic.BaseSettings):
     account_id: str
     user_id: str
     quickstart: dict[str, QuickStartConfig]
+    cache_for: int = 60
 
 
 class ScytheState(State):

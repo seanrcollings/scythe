@@ -12,7 +12,7 @@ if os.getenv("SCYTHE_DEVELOPMENT"):
     CACHE_DIR = CONFIG_DIR
 else:
     CONFIG_DIR = xdg.xdg_config_home() / "scythe"
-    CACHE_DIR = xdg.xdg_cache_home()
+    CACHE_DIR = CONFIG_DIR
 
 
 CONFIG_FILE = CONFIG_DIR / "config.yaml"

@@ -113,6 +113,7 @@ def timer(
 
     if duration == 0:
         ctx.prompt.subtle("Timer has been started.")
+        state.harvest.time_entires.set_cached_running_timer(timer.dict())
 
 
 @timer.subcommand(("delete", "d"))
@@ -125,11 +126,13 @@ def delete(
     day: Days in the past, relative to today, to delete timers from. 1 is yesterday, 2 is 2 days ago, etc.
     """
     delta = dt.timedelta(days=day)
+
     timers = state.harvest.time_entires.list(
         {
             "from": dt.date.today() - delta,
             "to": dt.date.today() - delta,
-        }
+        },
+        use_cache=False,
     )
     if len(timers) == 0:
         ctx.prompt.error("No timers found for this day")
@@ -138,9 +141,6 @@ def delete(
     timer = select_timer(timers, ctx)
 
     state.harvest.time_entires.delete(timer.id)
-    if timer.is_running:
-        with state.cache:
-            state.cache["running_timer"] = None
 
     ctx.prompt.ok("Timer deleted!")
 
@@ -151,7 +151,7 @@ def start(ctx: arc.Context, state: ScytheState):
 
     If a timer is currently running, it will be stopped. The currently running timer will be highlighted in orange.
     """
-    timers = state.harvest.time_entires.list({"from": dt.date.today()})
+    timers = state.harvest.time_entires.list({"from": dt.date.today()}, use_cache=False)
     if len(timers) == 0:
         ctx.prompt.error("No timers found")
         return
@@ -163,8 +163,6 @@ def start(ctx: arc.Context, state: ScytheState):
         ctx.exit(1)
 
     state.harvest.time_entires.restart(timer.id)
-    with state.cache:
-        state.cache["running_timer"] = timer
     ctx.prompt.ok("Timer started!")
 
 
@@ -285,6 +283,8 @@ def edit(
 
             elif idx == EditOptions.SAVE:
                 state.harvest.time_entires.update(timer.id, params)
+                if timer.is_running:
+                    state.harvest.time_entires.set_cached_running_timer(timer.dict())
                 ctx.prompt.ok("Timer updated!")
                 break
 
@@ -295,15 +295,15 @@ def edit(
 
 
 @timer.subcommand(("running", "r"))
-def running(state: ScytheState, show_sync: bool = arc.Flag(short="s")):
+def running(
+    state: ScytheState,
+    exit: bool = arc.Flag(short="e"),
+):
     """Display the currently running timer
 
     # Arguments
-    poll_duration: Polling interval in seconds. Defaults to 10
+    exit: output the information once, then exit
     """
-
-    # with state.cache as cache:
-    #     cache["running_timer"] = state.harvest.time_entires.running()
 
     while True:
         timer = state.harvest.time_entires.running()
@@ -324,7 +324,9 @@ def running(state: ScytheState, show_sync: bool = arc.Flag(short="s")):
             justify="center",
         )
 
-        print("\033c", end="")
+        if not exit:
+            print("\033c", end="")
+
         print(
             utils.Columns(
                 constants.SCYTHE,
@@ -332,8 +334,10 @@ def running(state: ScytheState, show_sync: bool = arc.Flag(short="s")):
             ),
             end="",
         )
-        # if show_sync:
-        #     print(f'Sycned: {updated_at.strftime("%-I:%M %p")}')
+
+        if exit:
+            return
+
         time.sleep(3)
 
 

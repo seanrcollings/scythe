@@ -108,7 +108,7 @@ class TimeEntry(pydantic.BaseModel):
 
     @pydantic.validator("started_time", pre=True)
     def parse_started_time(cls, v):
-        if v is None:
+        if v is None or isinstance(v, time):
             return v
 
         hour, minutes = (int(x) for x in v[0:-2].split(":"))

@@ -35,10 +35,10 @@ def setup(args, ctx: Context):
         ctx.state.config.token,
         ctx.state.config.account_id,
         cache,
-        cache_expiration=60,
+        cache_for=ctx.state.config.cache_for,
     )
 
-    ctx.state.logger = logging.getAppLogger("scythe")
+    ctx.state.logger = logging.getAppLogger("scy")
 
     yield
 
@@ -125,14 +125,11 @@ def projects(state: utils.ScytheState):
             )
 
 
-@cli.command(("sync", "s"))
-def sync(state: utils.ScytheState):
-    """Forces a cache sync"""
-    with state.cache as cache:
-        cache["project_assignments"] = state.harvest.project_assignments.list()
-        cache["running_timer"] = state.harvest.time_entires.running()
-
-    print("Cache synced")
+@cli.command()
+def clear_cache(state: utils.ScytheState):
+    """Clears the data cache, guranteeting that subsequent requests will result in fresh data"""
+    state.cache.clear()
+    print("Cache Cleared")
 
 
 @cli.command()

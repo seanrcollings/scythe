@@ -1,3 +1,4 @@
+from __future__ import annotations
 import typing as t
 
 import diskcache as dc  # type: ignore
@@ -6,19 +7,7 @@ import requests
 
 from . import schemas
 
-logger = logging.getAppLogger("scythe")
-
-
-def custom_hash(text: str):
-    """
-    builtin `hash()` uses a random seed for every session.
-    This is not desirable for our purposes, as we want to cache a consistent
-    key between sessions. This funciton always returns the same value for a given input
-    """
-    hash = 0
-    for ch in text:
-        hash = (hash * 281 ^ ord(ch) * 997) & 0xFFFFFFFF
-    return hash
+logger = logging.getAppLogger("scy")
 
 
 class RequestError(Exception):
@@ -40,15 +29,11 @@ class Session(requests.Session):
     def __init__(
         self,
         base_url: str,
-        cache: dc.Cache,
-        cache_expiration: int = None,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.base_url = base_url
-        self.cache = cache
-        self.cache_expiration = cache_expiration
 
     def get_url(self, url: str):
         if url.startswith("http"):
@@ -63,16 +48,7 @@ class Session(requests.Session):
 
     def get(self, url, **kwargs):
         logger.debug("Fetching %s", url)
-
-        key = self.cache_key(url, **kwargs)
-        if key in self.cache:
-            logger.debug("Using cached response for %s", url)
-            return self.cache.get(key)
-
-        res = self._handle_res(super().get(f"{self.get_url(url)}", **kwargs))
-
-        self.cache.set(key, res, expire=self.cache_expiration)
-        return res
+        return self._handle_res(super().get(f"{self.get_url(url)}", **kwargs))
 
     def post(self, url, data=None, json=None, **kwargs):
         logger.debug("Posting %s", url)
@@ -89,14 +65,6 @@ class Session(requests.Session):
     def delete(self, url, *args, **kwargs):
         logger.debug("Deleting %s", url)
         return self._handle_res(super().delete(f"{self.get_url(url)}", *args, **kwargs))
-
-    def cache_key(self, *args, **kwargs):
-        return custom_hash(
-            ".".join(
-                [str(arg) for arg in args]
-                + [str(key) + str(value) for key, value in kwargs.items()]
-            )
-        )
 
 
 T = t.TypeVar("T")
@@ -173,18 +141,31 @@ class Record(t.Generic[T, P]):
         endpoint: str,
         pagination_key: str,
         schema: type[T],
+        cache: dc.Cache,
+        cache_for: int = None,
     ):
         self.session = session
         self.endpoint = endpoint
         self.pagination_key = pagination_key
         self.schema = schema
+        self.cache = cache
+        self.cache_for = cache_for
 
-    def list(self, params: t.Optional[P] = None) -> RecordCollection[T]:
+    def list(
+        self, params: t.Optional[P] = None, use_cache: bool = True
+    ) -> RecordCollection[T]:
         kwargs = {}
         if params:
             kwargs["params"] = params
 
-        data = self.session.get(self.endpoint, **kwargs).json()
+        key = self.cache_key("list", params)
+        if key in self.cache and use_cache:
+            logger.info('Using cached data for "%s"', key)
+            data = self.cache[key]
+        else:
+            data = self.session.get(self.endpoint, **kwargs).json()
+            self.cache.set(key, data, expire=self.cache_for)
+
         return RecordCollection(
             values=[self.schema(**item) for item in data[self.pagination_key]],
             session=self.session,
@@ -197,36 +178,87 @@ class Record(t.Generic[T, P]):
             links=data["links"],
         )
 
-    def get(self, id: int, params: t.Optional[P] = None) -> T:
+    def get(self, id: int, params: t.Optional[P] = None, use_cache: bool = True) -> T:
         kwargs = {}
         if params:
             kwargs["params"] = params
-        return self.schema(**self.session.get(f"{self.endpoint}/{id}", **kwargs).json())
+
+        key = self.cache_key(id, params)
+        if key in self.cache and use_cache:
+            logger.info('Using cached data for "%s"', key)
+            data = self.cache[key]
+        else:
+            data = self.session.get(f"{self.endpoint}/{id}", **kwargs).json()
+            self.cache.set(key, data, expire=self.cache_for)
+
+        return self.schema(**data)
 
     def create(self, data: dict) -> T:
-        return self.schema(**self.session.post(self.endpoint, json=data).json())
+        data = self.session.post(self.endpoint, json=data).json()
+        self.cache.set(self.cache_key(data["id"]), data, expire=self.cache_for)
+        return self.schema(**data)
 
     def update(self, id: int, data: dict) -> T:
-        return self.schema(
-            **self.session.put(f"{self.endpoint}/{id}", json=data).json()
-        )
+        data = self.session.put(f"{self.endpoint}/{id}", json=data).json()
+        self.cache.set(self.cache_key(data["id"]), data, expire=self.cache_for)
+        return self.schema(**data)
 
     def delete(self, id: int):
-        return self.schema(**self.session.delete(f"{self.endpoint}/{id}").json())
+        data = self.session.delete(f"{self.endpoint}/{id}").json()
+        self.cache.delete(self.cache_key(data["id"]))
+        return self.schema(**data)
+
+    def cache_key(self, id: int | str, params: P = None) -> str:
+        key = f"{self.endpoint}-{id}"
+        if params:
+            key += f"-{params}"
+
+        return key
 
 
 class TimeEntryRecord(Record[schemas.TimeEntry, schemas.TimeEntryParams]):
+    NO_RUNNING_TIMER = "NO_RUNNING_TIMER"
+    """Sentinel value used when no timer is present so the request still uses the cache"""
+
+    def delete(self, id: int):
+        timer = super().delete(id)
+        if timer.is_running:
+            self.set_cached_running_timer(self.NO_RUNNING_TIMER)
+
     def running(self) -> t.Optional[schemas.TimeEntry]:
-        data = self.session.get("/time_entries", params={"is_running": "true"}).json()
-        if data["time_entries"]:
-            return self.schema(**data["time_entries"][0])
+        key = self.cache_key("running")
+        timer = None
+        if key in self.cache:
+            logger.info('Using cached data for "%s"', key)
+            timer = self.cache[key]
+        else:
+            data = self.session.get(
+                "/time_entries", params={"is_running": "true"}
+            ).json()
+            if data["time_entries"]:
+                timer = data["time_entries"][0]
+                self.cache.set(key, timer, expire=self.cache_for)
+                self.set_cached_running_timer(timer)
+            else:
+                self.set_cached_running_timer(self.NO_RUNNING_TIMER)
+
+        if timer and timer != self.NO_RUNNING_TIMER:
+            return self.schema(**timer)
+
         return None
 
     def restart(self, id: int) -> schemas.TimeEntry:
-        return self.schema(**self.session.patch(f"/time_entries/{id}/restart").json())
+        data = self.session.patch(f"/time_entries/{id}/restart").json()
+        self.cache.set(self.cache_key("running"), data, expire=self.cache_for)
+        return self.schema(**data)
 
     def stop(self, id: int) -> schemas.TimeEntry:
-        return self.schema(**self.session.patch(f"/time_entries/{id}/stop").json())
+        data = self.session.patch(f"/time_entries/{id}/stop").json()
+        self.set_cached_running_timer(self.NO_RUNNING_TIMER)
+        return self.schema(**data)
+
+    def set_cached_running_timer(self, data):
+        self.cache.set(self.cache_key("running"), data, expire=self.cache_for)
 
 
 class Harvest:
@@ -235,10 +267,10 @@ class Harvest:
         token: str,
         account_id: t.Union[str, int],
         cache: dc.Cache,
-        cache_expiration: int = None,
+        cache_for: int = None,
     ):
         super().__init__()
-        self.session = Session("https://api.harvestapp.com/v2", cache, cache_expiration)
+        self.session = Session("https://api.harvestapp.com/v2")
         self.session.headers.update(
             {
                 "Harvest-Account-Id": str(account_id),
@@ -248,13 +280,20 @@ class Harvest:
         )
 
         self.time_entires = TimeEntryRecord(
-            self.session, "/time_entries", "time_entries", schema=schemas.TimeEntry
+            self.session,
+            "/time_entries",
+            "time_entries",
+            schema=schemas.TimeEntry,
+            cache=cache,
+            cache_for=cache_for,
         )
         self.project_assignments = Record[schemas.ProjectAssignment, None](
             self.session,
             "/users/me/project_assignments",
             "project_assignments",
             schema=schemas.ProjectAssignment,
+            cache=cache,
+            cache_for=cache_for,
         )
 
     def me(self) -> schemas.User:
