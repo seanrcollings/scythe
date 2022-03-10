@@ -41,7 +41,7 @@ def parse_time(string: str) -> float:
 
 def get_hours_and_minutes(val: float) -> tuple[int, int]:
     minutes, hours = math.modf(val)
-    minutes = math.floor(round(minutes, 2) * 60)
+    minutes = math.ceil(round(minutes, 2) * 60)
     hours = int(hours)
     return hours, minutes
 

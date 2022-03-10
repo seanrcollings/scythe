@@ -21,29 +21,6 @@ from ..harvest_api import Harvest
 T = t.TypeVar("T")
 
 
-# def get_running_timer(cache: Cache, harvest: Harvest):
-#     with cache:
-#         timer: t.Optional[schemas.TimeEntry] = cache.get("running_timer")
-#         if timer:
-#             hours, minutes = timer.time()
-#             updated_at: t.Optional[dt.datetime] = cache.updated_at("running_timer")
-#             if updated_at:
-#                 delta = dt.datetime.now() - updated_at
-#                 hours += delta.seconds // 3600
-#                 minutes += delta.seconds // 60
-#                 if minutes >= 60:
-#                     hours += minutes // 60
-#                     minutes %= 60
-
-#             timer.hours = hours + minutes / 60
-#             cache.set("running_timer", timer, False)
-#         else:
-#             timer = harvest.time_entires.running()
-#             cache["running_timer"] = timer
-
-#         return timer, cache.updated_at("running_timer")
-
-
 def select_timer(timers, ctx: arc.Context) -> schemas.TimeEntry:
     tab = "       "
     idx, _ = exist_or_exit(  # type: ignore
@@ -286,11 +263,13 @@ def edit(
 def running(
     state: ScytheState,
     exit: bool = arc.Flag(short="e"),
+    no_ascii_art: bool = arc.Flag(short="n"),
 ):
     """Display the currently running timer
 
     # Arguments
     exit: output the information once, then exit
+    no_ascii_art: hide the scythe art
     """
 
     while True:
@@ -315,13 +294,16 @@ def running(
         if not exit:
             print("\033c", end="")
 
-        print(
-            utils.Columns(
-                constants.SCYTHE,
-                str(pretty_clock),
-            ),
-            end="",
-        )
+        if no_ascii_art:
+            print(pretty_clock)
+        else:
+            print(
+                utils.Columns(
+                    constants.SCYTHE,
+                    str(pretty_clock),
+                ),
+                end="",
+            )
 
         if exit:
             return
