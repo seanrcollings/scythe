@@ -59,8 +59,7 @@ def quickstart(
         }
     )
 
-    with state.cache as cache:
-        cache["running_timer"] = timer
+    state.harvest.time_entires.set_cached_running_timer(timer.dict())
 
     if duration:
         ctx.prompt.act(f"Timer created with a duration of {raw_duration}")
@@ -105,12 +104,8 @@ def list_entires(state: utils.ScytheState):
 @quickstart.subcommand(("add", "a"))
 def add(state: utils.ScytheState, ctx: Context):
     """Add a quickstart entry. Work in progress"""
-    with state.cache:
-        assignments = t.cast(
-            list[schemas.ProjectAssignment],
-            state.cache.get("project_assignments")
-            or state.harvest.project_assignments.list(),
-        )
+
+    assignments = state.harvest.project_assignments.list()
 
     project, p_idx = utils.select_project(assignments, ctx)
     project_alias = ctx.prompt.input("Project alias (optional): ") or project.name

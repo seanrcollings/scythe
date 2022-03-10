@@ -176,8 +176,6 @@ def stop(ctx: arc.Context, state: ScytheState):
 
     state.harvest.time_entires.stop(timer.id)
     ctx.prompt.ok("Timer stopped!")
-    with state.cache as cache:
-        cache["running_timer"] = None
 
 
 class EditOptions(enum.IntEnum):
@@ -245,12 +243,7 @@ def edit(
                 params["notes"] = note
 
             elif idx == EditOptions.PROJECT:
-                with state.cache:
-                    assignments = t.cast(
-                        list[schemas.ProjectAssignment],
-                        state.cache.get("project_assignments")
-                        or state.harvest.project_assignments.list(),
-                    )
+                assignments = state.harvest.project_assignments.list()
                 project, p_idx = utils.select_project(assignments, ctx)
 
                 task, _ = utils.select_task(assignments[p_idx].task_assignments, ctx)
@@ -261,12 +254,7 @@ def edit(
                 params["task_id"] = task.id
 
             elif idx == EditOptions.TASK:
-                with state.cache:
-                    assignments = t.cast(
-                        list[schemas.ProjectAssignment],
-                        state.cache.get("project_assignments")
-                        or state.harvest.project_assignments.list(),
-                    )
+                assignments = state.harvest.project_assignments.list()
                 idx = 0
                 for assn in assignments:
                     if assn.project.id == timer.project["id"]:
