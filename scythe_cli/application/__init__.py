@@ -1,4 +1,5 @@
 import datetime as dt
+import os
 import typing as t
 import oyaml as yaml  # type: ignore
 from arc import CLI, errors, Argument, Context, logging, present
@@ -13,7 +14,7 @@ from .. import constants
 from .timer import timer
 from .quickstart import quickstart
 
-cli = CLI(env="development")
+cli = CLI(env=os.getenv("SCYTHE_ENV", "production"))  # type: ignore
 cli.install_command(timer)
 cli.install_command(quickstart)
 cli.subcommand_aliases["t"] = "timer"
