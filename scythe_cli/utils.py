@@ -6,6 +6,7 @@ from arc import prompt
 import arc
 
 import math
+import diskcache
 import pydantic
 
 from scythe_cli.cache import Cache
@@ -118,5 +119,5 @@ class Config(pydantic.BaseSettings):
 class ScytheState(State):
     config: Config
     harvest: Harvest
-    cache: Cache
     logger: Logger
+    cache: diskcache.Cache

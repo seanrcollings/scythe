@@ -3,6 +3,7 @@ import typing as t
 import oyaml as yaml  # type: ignore
 from arc import CLI, errors, Argument, Context, logging, present
 from arc.color import fg, effects, colorize
+import diskcache as dc  # type: ignore
 
 
 from scythe_cli import utils
@@ -11,9 +12,8 @@ from .. import constants
 
 from .timer import timer
 from .quickstart import quickstart
-from ..cache import Cache
 
-cli = CLI()
+cli = CLI(env="development")
 cli.install_command(timer)
 cli.install_command(quickstart)
 cli.subcommand_aliases["t"] = "timer"
@@ -29,11 +29,20 @@ def setup(args, ctx: Context):
     with constants.CONFIG_FILE.open() as f:
         ctx.state.config = utils.Config(**yaml.load(f, yaml.CLoader))
 
-    ctx.state.harvest = Harvest(ctx.state.config.token, ctx.state.config.account_id)
-    ctx.state.cache = Cache(str(constants.CACHE_FILE), dt.timedelta(minutes=5))
+    cache = dc.Cache(constants.CACHE_DIR)
+    ctx.state.cache = cache
+    ctx.state.harvest = Harvest(
+        ctx.state.config.token,
+        ctx.state.config.account_id,
+        cache,
+        cache_expiration=60,
+    )
+
     ctx.state.logger = logging.getAppLogger("scythe")
 
     yield
+
+    cache.close()
 
 
 @setup.remove
@@ -49,7 +58,11 @@ def init(
     account_id: Harvest Account ID to be sent with every request
     """
     print("Checking a call can be made with the provided data...")
-    api = Harvest(token, account_id)
+    api = Harvest(
+        token,
+        account_id,
+        dc.Cache(constants.CACHE_DIR),
+    )
     try:
         user = api.me()
     except RequestError as e:

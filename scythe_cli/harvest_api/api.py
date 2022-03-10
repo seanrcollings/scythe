@@ -1,10 +1,24 @@
-import logging
 import typing as t
 
+import diskcache as dc  # type: ignore
+from arc import logging
 import requests
+
 from . import schemas
 
-logger = logging.getLogger("arc_logger")
+logger = logging.getAppLogger("scythe")
+
+
+def custom_hash(text: str):
+    """
+    builtin `hash()` uses a random seed for every session.
+    This is not desirable for our purposes, as we want to cache a consistent
+    key between sessions. This funciton always returns the same value for a given input
+    """
+    hash = 0
+    for ch in text:
+        hash = (hash * 281 ^ ord(ch) * 997) & 0xFFFFFFFF
+    return hash
 
 
 class RequestError(Exception):
@@ -23,9 +37,18 @@ class RequestError(Exception):
 
 
 class Session(requests.Session):
-    def __init__(self, base_url: str, *args, **kwargs):
+    def __init__(
+        self,
+        base_url: str,
+        cache: dc.Cache,
+        cache_expiration: int = None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.base_url = base_url
+        self.cache = cache
+        self.cache_expiration = cache_expiration
 
     def get_url(self, url: str):
         if url.startswith("http"):
@@ -40,7 +63,16 @@ class Session(requests.Session):
 
     def get(self, url, **kwargs):
         logger.debug("Fetching %s", url)
-        return self._handle_res(super().get(f"{self.get_url(url)}", **kwargs))
+
+        key = self.cache_key(url, **kwargs)
+        if key in self.cache:
+            logger.debug("Using cached response for %s", url)
+            return self.cache.get(key)
+
+        res = self._handle_res(super().get(f"{self.get_url(url)}", **kwargs))
+
+        self.cache.set(key, res, expire=self.cache_expiration)
+        return res
 
     def post(self, url, data=None, json=None, **kwargs):
         logger.debug("Posting %s", url)
@@ -57,6 +89,14 @@ class Session(requests.Session):
     def delete(self, url, *args, **kwargs):
         logger.debug("Deleting %s", url)
         return self._handle_res(super().delete(f"{self.get_url(url)}", *args, **kwargs))
+
+    def cache_key(self, *args, **kwargs):
+        return custom_hash(
+            ".".join(
+                [str(arg) for arg in args]
+                + [str(key) + str(value) for key, value in kwargs.items()]
+            )
+        )
 
 
 T = t.TypeVar("T")
@@ -118,6 +158,12 @@ class RecordCollection(t.Generic[T]):
 
     def more(self) -> bool:
         return self.next_page is not None
+
+
+## Moving the caching into the Record methods may make sense
+## Each entry is cached via it's object type (self.endpoint) and it's id
+## That way, it would be easier to update object on post or put or delete requests
+## because right now, the cache is only updated when the object is fetched
 
 
 class Record(t.Generic[T, P]):
@@ -184,9 +230,15 @@ class TimeEntryRecord(Record[schemas.TimeEntry, schemas.TimeEntryParams]):
 
 
 class Harvest:
-    def __init__(self, token: str, account_id: t.Union[str, int]):
+    def __init__(
+        self,
+        token: str,
+        account_id: t.Union[str, int],
+        cache: dc.Cache,
+        cache_expiration: int = None,
+    ):
         super().__init__()
-        self.session = Session("https://api.harvestapp.com/v2")
+        self.session = Session("https://api.harvestapp.com/v2", cache, cache_expiration)
         self.session.headers.update(
             {
                 "Harvest-Account-Id": str(account_id),

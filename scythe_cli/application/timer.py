@@ -21,27 +21,27 @@ from ..harvest_api import Harvest
 T = t.TypeVar("T")
 
 
-def get_running_timer(cache: Cache, harvest: Harvest):
-    with cache:
-        timer: t.Optional[schemas.TimeEntry] = cache.get("running_timer")
-        if timer:
-            hours, minutes = timer.time()
-            updated_at: t.Optional[dt.datetime] = cache.updated_at("running_timer")
-            if updated_at:
-                delta = dt.datetime.now() - updated_at
-                hours += delta.seconds // 3600
-                minutes += delta.seconds // 60
-                if minutes >= 60:
-                    hours += minutes // 60
-                    minutes %= 60
+# def get_running_timer(cache: Cache, harvest: Harvest):
+#     with cache:
+#         timer: t.Optional[schemas.TimeEntry] = cache.get("running_timer")
+#         if timer:
+#             hours, minutes = timer.time()
+#             updated_at: t.Optional[dt.datetime] = cache.updated_at("running_timer")
+#             if updated_at:
+#                 delta = dt.datetime.now() - updated_at
+#                 hours += delta.seconds // 3600
+#                 minutes += delta.seconds // 60
+#                 if minutes >= 60:
+#                     hours += minutes // 60
+#                     minutes %= 60
 
-            timer.hours = hours + minutes / 60
-            cache.set("running_timer", timer, False)
-        else:
-            timer = harvest.time_entires.running()
-            cache["running_timer"] = timer
+#             timer.hours = hours + minutes / 60
+#             cache.set("running_timer", timer, False)
+#         else:
+#             timer = harvest.time_entires.running()
+#             cache["running_timer"] = timer
 
-        return timer, cache.updated_at("running_timer")
+#         return timer, cache.updated_at("running_timer")
 
 
 def select_timer(timers, ctx: arc.Context) -> schemas.TimeEntry:
@@ -92,12 +92,7 @@ def timer(
     else:
         duration = 0
 
-    with state.cache:
-        assignments = t.cast(
-            list[schemas.ProjectAssignment],
-            state.cache.get("project_assignments")
-            or state.harvest.project_assignments.list(),
-        )
+    assignments = state.harvest.project_assignments.list()
 
     project, p_idx = utils.select_project(assignments, ctx)
     task, _ = utils.select_task(assignments[p_idx].task_assignments, ctx)
@@ -118,8 +113,6 @@ def timer(
 
     if duration == 0:
         ctx.prompt.subtle("Timer has been started.")
-        with state.cache as cache:
-            cache["running_timer"] = timer
 
 
 @timer.subcommand(("delete", "d"))
@@ -308,11 +301,12 @@ def running(state: ScytheState, show_sync: bool = arc.Flag(short="s")):
     # Arguments
     poll_duration: Polling interval in seconds. Defaults to 10
     """
-    with state.cache as cache:
-        cache["running_timer"] = state.harvest.time_entires.running()
+
+    # with state.cache as cache:
+    #     cache["running_timer"] = state.harvest.time_entires.running()
 
     while True:
-        timer, updated_at = get_running_timer(state.cache, state.harvest)
+        timer = state.harvest.time_entires.running()
         if not timer:
             print("No timers running")
             return
@@ -338,8 +332,8 @@ def running(state: ScytheState, show_sync: bool = arc.Flag(short="s")):
             ),
             end="",
         )
-        if show_sync:
-            print(f'Sycned: {updated_at.strftime("%-I:%M %p")}')
+        # if show_sync:
+        #     print(f'Sycned: {updated_at.strftime("%-I:%M %p")}')
         time.sleep(3)
 
 
@@ -349,7 +343,7 @@ def waybar(state: utils.ScytheState, ctx: arc.Context):
     the currently running timer to be used with
     waybar (https://github.com/Alexays/Waybar)
     """
-    timer, updated_at = get_running_timer(state.cache, state.harvest)
+    timer = state.harvest.time_entires.running()
     if not timer:
         output = {
             "text": "",
@@ -362,7 +356,7 @@ def waybar(state: utils.ScytheState, ctx: arc.Context):
             "text": timer.fmt_time(),
             "alt": "active",
             "class": "active",
-            "tooltip": f"{timer.notes} ({updated_at.strftime('%-I:%M %p')})",
+            "tooltip": f"{timer.notes}",
         }
 
     sys.stdout.write(json.dumps(output))

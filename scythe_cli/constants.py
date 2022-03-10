@@ -9,10 +9,10 @@ BG_ORANGE = color.bg.rgb(243, 108, 0)
 
 if os.getenv("SCYTHE_DEVELOPMENT"):
     CONFIG_DIR = PROJECT_ROOT / "config"
-    CACHE_FILE = CONFIG_DIR / "scythe.cache"
+    CACHE_DIR = CONFIG_DIR
 else:
     CONFIG_DIR = xdg.xdg_config_home() / "scythe"
-    CACHE_FILE = xdg.xdg_cache_home() / "scythe-cli.cache"
+    CACHE_DIR = xdg.xdg_cache_home()
 
 
 CONFIG_FILE = CONFIG_DIR / "config.yaml"
