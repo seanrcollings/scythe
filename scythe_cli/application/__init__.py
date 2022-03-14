@@ -7,6 +7,7 @@ from arc.color import fg, effects, colorize
 import diskcache as dc  # type: ignore
 from rich.table import Table
 from rich.console import Console
+from rich.tree import Tree
 
 from scythe_cli import utils
 from scythe_cli.harvest_api import Harvest, RequestError
@@ -104,7 +105,7 @@ def whoami(state: utils.ScytheState):
     user = state.harvest.me()
 
     for key, value in user.dict().items():
-        print(f"{key}: {value}")
+        state.console.print(f"{key}: {value}")
 
 
 @cli.command(("projects", "p"))
@@ -112,20 +113,15 @@ def projects(state: utils.ScytheState):
     """Lists all projects and tasks that the current user is associated with"""
 
     assignments = state.harvest.project_assignments.list()
-    for idx, assignment in enumerate(assignments):
+    tree = Tree("Harvest Projects")
+    for assignment in assignments:
 
-        print(
-            colorize(
-                f"({idx}) {assignment.project.name}", effects.BOLD, constants.FG_ORANGE
-            ),
-            colorize(f"({assignment.project.id})", fg.GREY),
-        )
+        sub = tree.add(f"[blue]{assignment.project.name}[/]")
 
-        for task_idx, task_assignment in enumerate(assignment.task_assignments):
-            print(
-                f"\t({task_idx}) {task_assignment.task.name}",
-                colorize(f"({task_assignment.task.id})", fg.GREY),
-            )
+        for task_assignment in assignment.task_assignments:
+            sub.add(f"{task_assignment.task.name}")
+
+    state.console.print(tree)
 
 
 @cli.command()

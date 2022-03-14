@@ -2,9 +2,7 @@ import datetime as dt
 import typing as t
 import webbrowser
 import oyaml as yaml  # type: ignore
-from rich.tree import Tree
-from arc import Flag, errors, Argument, Context, Param, command
-from arc.color import fg, effects, colorize
+from arc import Flag, errors, Context, Param, command
 
 from scythe_cli import utils, constants
 from scythe_cli.harvest_api import schemas
