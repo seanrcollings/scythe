@@ -7,7 +7,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 FG_ORANGE = color.fg.rgb(243, 108, 0)
 BG_ORANGE = color.bg.rgb(243, 108, 0)
 
-if os.getenv("SCYTHE_DEVELOPMENT"):
+if os.getenv("SCYTHE_ENV") == "development":
     CONFIG_DIR = PROJECT_ROOT / "config"
     CACHE_DIR = CONFIG_DIR
 else:

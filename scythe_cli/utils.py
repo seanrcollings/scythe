@@ -116,15 +116,11 @@ def truncate(string: str, width: int = 80) -> str:
     return truncated
 
 
-class QuickStartTaskConfig(pydantic.BaseModel):
-    id: int
+class QuickStartConfig(pydantic.BaseModel):
+    project_id: int
+    task_id: int
     url: t.Optional[str]
     notes: t.Optional[str]
-
-
-class QuickStartConfig(pydantic.BaseModel):
-    id: int
-    tasks: dict[str, t.Union[int, QuickStartTaskConfig]]
 
 
 class Config(pydantic.BaseSettings):
