@@ -1,6 +1,7 @@
 import datetime as dt
 import enum
 import json
+import shutil
 import sys
 import time
 import typing as t
@@ -8,14 +9,17 @@ import arc
 from arc.color import colorize, effects, fg
 from arc.present import Box
 from arc import prompt, errors
+from rich.panel import Panel
+from rich.layout import Layout
+from rich.text import Text
+from rich.live import Live
+from rich.columns import Columns
 
 from scythe_cli import utils
 from scythe_cli.clock.clock import clock
 from scythe_cli.harvest_api import schemas
 from scythe_cli.utils import ScytheState, exist_or_exit
 from .. import constants
-from ..cache import Cache
-from ..harvest_api import Harvest
 
 
 T = t.TypeVar("T")
@@ -23,15 +27,19 @@ T = t.TypeVar("T")
 
 def select_timer(timers, ctx: arc.Context) -> schemas.TimeEntry:
     tab = "       "
+    width = shutil.get_terminal_size().columns
     idx, _ = exist_or_exit(  # type: ignore
         prompt.select(
             [
                 (
-                    colorize(f"({timer.fmt_time()})", effects.BOLD)
-                    + f' {constants.FG_ORANGE if timer.is_running else ""}{effects.BOLD}'
-                    f'{timer.project["name"]}{effects.CLEAR}\n'
-                    f'{tab}{timer.task["name"]}\n'
-                    f"{tab}{colorize(timer.notes or '', effects.ITALIC, fg.GREY)}\n"
+                    utils.truncate(
+                        colorize(f"({timer.fmt_time()})", effects.BOLD)
+                        + f' {constants.FG_ORANGE if timer.is_running else ""}{effects.BOLD}'
+                        f'{timer.project["name"]}{effects.CLEAR}\n'
+                        f'{tab}{timer.task["name"]}\n'
+                        f"{tab}{colorize(timer.notes or '', effects.ITALIC, fg.GREY)}\n",
+                        width,
+                    )
                 )
                 for timer in timers
             ]
@@ -272,43 +280,29 @@ def running(
     no_ascii_art: hide the scythe art
     """
 
-    while True:
+    def generate_timer():
         timer = state.harvest.time_entires.running()
-        if not timer:
-            print("No timers running")
-            return
-
-        content = f"""\
-{clock(*timer.time())}
-{colorize('PROJECT', constants.FG_ORANGE, effects.BOLD)}: {timer.project['name']}
-{colorize('TASK', constants.FG_ORANGE, effects.BOLD)}: {timer.task['name']}
-{colorize('NOTES', constants.FG_ORANGE, effects.BOLD)}: {timer.notes}
-    """
-
-        pretty_clock = Box(
-            content,
-            padding={"top": 3, "bottom": 3, "left": 3, "right": 1},
-            justify="center",
-        )
-
-        if not exit:
-            print("\033c", end="")
-
-        if no_ascii_art:
-            print(pretty_clock)
+        cols = Columns([Text.from_ansi(constants.SCYTHE)] if not no_ascii_art else [])
+        height = None if no_ascii_art else 20
+        content = ""
+        if timer:
+            content += f"\n[bold]{timer.project['name']}[/]"
+            content += f"\n{timer.task['name']}"
+            content += f"\n[#444444 i]{timer.notes}[/]\n"
+            content += clock(*timer.time())
         else:
-            print(
-                utils.Columns(
-                    constants.SCYTHE,
-                    str(pretty_clock),
-                ),
-                end="",
-            )
+            content += "[red]No timer is currently running[/]\n"
+            content += clock(0, 0)
 
+        cols.add_renderable(Panel(content, height=height))
+        return cols
+
+    with Live(generate_timer(), console=state.console, refresh_per_second=4) as live:
         if exit:
             return
-
-        time.sleep(3)
+        while True:
+            time.sleep(1)
+            live.update(generate_timer())
 
 
 @running.subcommand()

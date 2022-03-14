@@ -9,6 +9,7 @@ import arc
 import math
 import diskcache  # type: ignore
 import pydantic
+from rich.console import Console
 
 from scythe_cli.harvest_api import Harvest
 
@@ -104,6 +105,17 @@ class Columns:
             return string
 
 
+def truncate(string: str, width: int = 80) -> str:
+    truncated = ""
+    for line in string.split("\n"):
+        if utils.ansi_len(line) > width:
+            truncated += line[:width] + "\n"
+        else:
+            truncated += line + "\n"
+
+    return truncated
+
+
 class QuickStartTaskConfig(pydantic.BaseModel):
     id: int
     url: t.Optional[str]
@@ -128,3 +140,4 @@ class ScytheState(State):
     harvest: Harvest
     logger: Logger
     cache: diskcache.Cache
+    console: Console

@@ -5,7 +5,8 @@ import oyaml as yaml  # type: ignore
 from arc import CLI, errors, Argument, Context, logging, present
 from arc.color import fg, effects, colorize
 import diskcache as dc  # type: ignore
-
+from rich.table import Table
+from rich.console import Console
 
 from scythe_cli import utils
 from scythe_cli.harvest_api import Harvest, RequestError
@@ -40,6 +41,7 @@ def setup(args, ctx: Context):
     )
 
     ctx.state.logger = logging.getAppLogger("scy")
+    ctx.state.console = Console(force_terminal=True)
 
     yield
 
@@ -163,17 +165,13 @@ def stats(state: utils.ScytheState):
         *utils.get_hours_and_minutes(sum(timer.hours for timer in today_timers))
     )
 
-    print(
-        present.Table(
-            [
-                "Time Period",
-                {"name": "Timers", "justify": "right", "width": 10},
-                {"name": "Hours", "justify": "right", "width": 10},
-            ],
-            [
-                ["Last 7 Days", len(timers), hours],
-                ["Current Week", len(week_timers), week_hours],
-                ["Today", len(today_timers), today_hours],
-            ],
-        )
-    )
+    table = Table(title="Harvest Stats")
+    table.add_column("Time Period")
+    table.add_column("Number of Timers", justify="right", style="blue")
+    table.add_column("Hours", justify="right")
+
+    table.add_row("Last 7 Days", str(len(timers)), hours)
+    table.add_row("Current Week", str(len(week_timers)), week_hours)
+    table.add_row("Today", str(len(today_timers)), today_hours)
+
+    state.console.print(table)
