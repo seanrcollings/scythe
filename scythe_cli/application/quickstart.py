@@ -24,9 +24,9 @@ def quickstart(
 
     # Arguments
     name: Name of the quickstart entry
-    open_url: Open the url of the timer in the browser, if one exists
+    open_url: Open the url of the quickstart enty in the browser, if one exists
     raw_duration: Create the timer with the specified duration, rather than starting it
-    notes: Notes to add to the timer. Overrides the notes set in the config file1
+    notes: Notes to add to the timer. Overrides the notes set in the config file
     """
     if raw_duration:
         duration = utils.parse_time(raw_duration)
@@ -73,7 +73,7 @@ def list_entires(state: utils.ScytheState):
 
     for name, data in state.config.quickstart.items():
         old_len = state.console.width
-        state.console.width = 60
+        state.console.width = 60 if old_len > 60 else old_len
         state.console.rule(name)
         state.console.print("Project ID:", data.project_id)
         state.console.print("Task ID:", data.task_id)
@@ -84,7 +84,7 @@ def list_entires(state: utils.ScytheState):
 
 @quickstart.subcommand(("add", "a"))
 def add(state: utils.ScytheState, ctx: Context):
-    """Add a quickstart entry. Work in progress"""
+    """Add a quickstart entry"""
 
     name = ctx.prompt.input("Quickstart entry name: ", empty=False)
 
