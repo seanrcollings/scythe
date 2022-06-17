@@ -1,16 +1,13 @@
 import datetime as dt
 import enum
-import json
 import shutil
-import sys
 import time
 import typing as t
+
 import arc
 from arc.color import colorize, effects, fg
-from arc.present import Box
 from arc import prompt, errors
 from rich.panel import Panel
-from rich.layout import Layout
 from rich.text import Text
 from rich.live import Live
 from rich.columns import Columns
@@ -303,28 +300,3 @@ def running(
         while True:
             time.sleep(1)
             live.update(generate_timer())
-
-
-@running.subcommand()
-def waybar(state: utils.ScytheState, ctx: arc.Context):
-    """Outputs a JSON encoded representation of
-    the currently running timer to be used with
-    waybar (https://github.com/Alexays/Waybar)
-    """
-    timer = state.harvest.time_entires.running()
-    if not timer:
-        output = {
-            "text": "",
-            "alt": "inactive",
-            "class": "inactive",
-            "tooltip": "No Timer Currently Running",
-        }
-    else:
-        output = {
-            "text": timer.fmt_time(),
-            "alt": "active",
-            "class": "active",
-            "tooltip": f"{timer.notes}",
-        }
-
-    sys.stdout.write(json.dumps(output))

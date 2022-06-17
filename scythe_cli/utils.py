@@ -129,6 +129,7 @@ class Config(pydantic.BaseSettings):
     user_id: str
     quickstart: dict[str, QuickStartConfig]
     cache_for: int = 60
+    autoload: list[str] = []
 
 
 class ScytheState(State):

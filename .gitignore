@@ -5,5 +5,5 @@ __pycache__
 .vscode
 .vim
 dist
-config
+data
 .envrc

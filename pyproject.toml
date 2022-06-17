@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scythe-cli"
-version = "0.12.0"
+version = "0.13.0"
 description = "A Harvest is always better with a good tool"
 authors = ["Sean Collings <seanrcollings@gmail.com>"]
 license = "MIT"

@@ -8,15 +8,16 @@ FG_ORANGE = color.fg.rgb(243, 108, 0)
 BG_ORANGE = color.bg.rgb(243, 108, 0)
 
 if os.getenv("SCYTHE_ENV") == "development":
-    CONFIG_DIR = PROJECT_ROOT / "config"
+    CONFIG_DIR = PROJECT_ROOT / "data"
     CACHE_DIR = CONFIG_DIR
+    AUTOLOAD_DIR = CONFIG_DIR / "ext"
 else:
     CONFIG_DIR = xdg.xdg_config_home() / "scythe"
-    CACHE_DIR = CONFIG_DIR
+    CACHE_DIR = xdg.xdg_cache_home()
+    AUTOLOAD_DIR = xdg.xdg_data_home() / "scythe"
 
 
 CONFIG_FILE = CONFIG_DIR / "config.yaml"
-AUTOLOAD_DIR = CONFIG_DIR / "extensions"
 
 
 # 40 x 21

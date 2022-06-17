@@ -8,6 +8,7 @@ import diskcache as dc  # type: ignore
 from rich.table import Table
 from rich.console import Console
 from rich.tree import Tree
+from xdg import xdg_config_dirs, xdg_config_home
 
 from scythe_cli import utils
 from scythe_cli.harvest_api import Harvest, RequestError
@@ -21,6 +22,7 @@ cli.install_command(timer)
 cli.install_command(quickstart)
 cli.subcommand_aliases["t"] = "timer"
 cli.subcommand_aliases["qs"] = "quickstart"
+cli.autoload(constants.AUTOLOAD_DIR)
 
 
 @cli.callback()
