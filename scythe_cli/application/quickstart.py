@@ -2,7 +2,7 @@ import datetime as dt
 import typing as t
 import webbrowser
 import oyaml as yaml  # type: ignore
-from arc import Flag, errors, Context, Param, command
+from arc import Flag, errors, Context, command, Option
 
 from scythe_cli import utils, constants
 from scythe_cli.harvest_api import schemas
@@ -15,8 +15,8 @@ def quickstart(
     name: str,
     *,
     open_url: bool = Flag(short="o"),
-    raw_duration: str = Param(name="duration", short="d", default="0"),
-    notes: str = Param(default="", short="n"),
+    raw_duration: str = Option(name="duration", short="d", default="0"),
+    notes: str = Option(default="", short="n"),
 ):
     """Launches an quickstart entry. One can be added with quickstart:add
 

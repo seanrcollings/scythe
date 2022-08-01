@@ -51,9 +51,8 @@ def select_timer(timers, ctx: arc.Context) -> schemas.TimeEntry:
 def timer(
     ctx: arc.Context,
     state: ScytheState,
-    *,
-    raw_duration: t.Optional[str] = arc.Param(name="duration", short="d", default="0"),
-    allow_empty_notes: bool = arc.Param(short="e"),
+    raw_duration: t.Optional[str] = arc.Option(name="duration", short="d", default="0"),
+    allow_empty_notes: bool = arc.Flag(short="e"),
 ):
     """Create and start a new timer
 

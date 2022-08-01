@@ -2,12 +2,10 @@ from __future__ import annotations
 import typing as t
 
 import diskcache as dc  # type: ignore
-from arc import logging
+from arc.logging import logger
 import requests
 
 from . import schemas
-
-logger = logging.getAppLogger("scy")
 
 
 class RequestError(Exception):

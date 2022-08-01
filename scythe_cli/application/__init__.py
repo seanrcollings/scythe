@@ -2,13 +2,14 @@ import datetime as dt
 import os
 import typing as t
 import oyaml as yaml  # type: ignore
-from arc import CLI, errors, Argument, Context, logging, present
+import arc
+from arc import Context
 from arc.color import fg, effects, colorize
+from arc.logging import logger
 import diskcache as dc  # type: ignore
 from rich.table import Table
 from rich.console import Console
 from rich.tree import Tree
-from xdg import xdg_config_dirs, xdg_config_home
 
 from scythe_cli import utils
 from scythe_cli.harvest_api import Harvest, RequestError
@@ -17,18 +18,11 @@ from .. import constants
 from .timer import timer
 from .quickstart import quickstart
 
-cli = CLI(env=os.getenv("SCYTHE_ENV", "production"))  # type: ignore
-cli.install_command(timer)
-cli.install_command(quickstart)
-cli.subcommand_aliases["t"] = "timer"
-cli.subcommand_aliases["qs"] = "quickstart"
-cli.autoload(constants.AUTOLOAD_DIR)
 
-
-@cli.callback()
-def setup(args, ctx: Context):
+@arc.decorator()
+def setup(ctx: Context):
     if not constants.CONFIG_FILE.exists():
-        raise errors.ExecutionError(
+        raise arc.ExecutionError(
             f"No Config file present, run {colorize('scythe init', fg.YELLOW)}"
         )
     with constants.CONFIG_FILE.open() as f:
@@ -43,19 +37,25 @@ def setup(args, ctx: Context):
         cache_for=ctx.state.config.cache_for,
     )
 
-    ctx.state.logger = logging.getAppLogger("scy")
+    ctx.state.logger = logger
     ctx.state.console = Console(force_terminal=True)
+    ctx.resource(cache)
 
-    yield
 
-    cache.close()
+arc.configure(environment=os.getenv("SCYTHE_ENV", "production"))
+cli = arc.namespace(name="scythe")
+cli.decorators.add(setup)
+
+cli.add_command(timer, ["t"])
+cli.add_command(quickstart, ["qs"])
+cli.autoload(constants.AUTOLOAD_DIR)
 
 
 @setup.remove
-@cli.command()
+@cli.subcommand()
 def init(
-    token: str = Argument(prompt="Harvest Token: "),
-    account_id: str = Argument(prompt="Harvest Account ID: "),
+    token: str = arc.Argument(prompt="Harvest Token: "),
+    account_id: str = arc.Argument(prompt="Harvest Account ID: "),
 ):
     """Sets up the config file
 
@@ -72,7 +72,7 @@ def init(
     try:
         user = api.me()
     except RequestError as e:
-        raise errors.ExecutionError(
+        raise arc.ExecutionError(
             f"{fg.BRIGHT_RED}Error!{effects.CLEAR} The api returned a "
             f"{fg.YELLOW}{e.status_code}{effects.CLEAR} "
             f"with the following body:\n{e.response.text}"
@@ -101,7 +101,7 @@ def init(
     print(f"{fg.GREEN}Config file written ({constants.CONFIG_FILE}){effects.CLEAR}")
 
 
-@cli.command()
+@cli.subcommand()
 def whoami(state: utils.ScytheState):
     """Prints out info about the currently authenticated user"""
     user = state.harvest.me()
@@ -110,7 +110,7 @@ def whoami(state: utils.ScytheState):
         state.console.print(f"{key}: {value}")
 
 
-@cli.command(("projects", "p"))
+@cli.subcommand(("projects", "p"))
 def projects(state: utils.ScytheState):
     """Lists all projects and tasks that the current user is associated with"""
 
@@ -126,14 +126,14 @@ def projects(state: utils.ScytheState):
     state.console.print(tree)
 
 
-@cli.command()
+@cli.subcommand()
 def clear_cache(state: utils.ScytheState):
     """Clears the data cache, guranteeting that subsequent requests will result in fresh data"""
     state.cache.clear()
     print("Cache Cleared")
 
 
-@cli.command()
+@cli.subcommand()
 def stats(state: utils.ScytheState):
     delta = dt.timedelta(days=7)
     today = dt.date.today()
