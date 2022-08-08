@@ -18,7 +18,7 @@ from .. import constants
 from .timer import timer
 from .quickstart import quickstart
 
-arc.configure(version="0.15.0", environment=os.getenv("SCYTHE_ENV", "production"))
+arc.configure(version="0.15.0", environment=os.getenv("SCYTHE_ENV", "production"))  # type: ignore
 
 
 @arc.command("scythe")
