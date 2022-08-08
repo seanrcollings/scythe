@@ -18,9 +18,21 @@ from .. import constants
 from .timer import timer
 from .quickstart import quickstart
 
+arc.configure(version="0.15.0", environment=os.getenv("SCYTHE_ENV", "production"))
 
-@arc.decorator()
-def setup(ctx: Context):
+
+@arc.command("scythe")
+def cli():
+    ...
+
+
+cli.add_command(timer, ["t"])
+cli.add_command(quickstart, ["qs"])
+cli.autoload(str(constants.AUTOLOAD_DIR))
+
+
+@cli.decorate(children_only=True)
+def setup(ctx: Context) -> t.Any:
     if not constants.CONFIG_FILE.exists():
         raise arc.ExecutionError(
             f"No Config file present, run {colorize('scythe init', fg.YELLOW)}"
@@ -40,15 +52,6 @@ def setup(ctx: Context):
     ctx.state.logger = logger
     ctx.state.console = Console(force_terminal=True)
     ctx.resource(cache)
-
-
-arc.configure(environment=os.getenv("SCYTHE_ENV", "production"))
-cli = arc.namespace(name="scythe")
-cli.decorators.add(setup)
-
-cli.add_command(timer, ["t"])
-cli.add_command(quickstart, ["qs"])
-cli.autoload(constants.AUTOLOAD_DIR)
 
 
 @setup.remove
