@@ -15,7 +15,8 @@ pydantic = "^1.9.0"
 arc-cli = "8.1.5"
 oyaml = "^1.0"
 diskcache = "^5.4.0"
-textual = {extras = ["dev"], version = "^0.23.0"}
+textual = {extras = ["dev"], version = "^0.24.0"}
+httpx = "^0.24.0"
 
 
 [tool.poetry.dev-dependencies]

@@ -1,0 +1,40 @@
+NewTimerModal {
+  display: none;
+  width: 1fr;
+  height: 1fr;
+  layer: top;
+  opacity: 0;
+}
+
+NewTimerModal.open {
+  display: block;
+}
+
+NewTimerModal #body {
+  width: 1fr;
+  margin: 10;
+  padding: 0 1;
+  background: $background-lighten-1;
+  border: tall $background;
+  height: 21;
+}
+
+NewTimerModal #body #title {
+  text-style: bold;
+  border-bottom: solid $background-lighten-3;
+  padding-top: 1;
+}
+
+NewTimerModal #body Select,
+NewTimerModal #body Input {
+  width: 1fr;
+  margin: 1 0;
+}
+
+NewTimerModal #actions #spacer {
+  width: 1fr;
+}
+
+NewTimerModal #actions #save {
+  margin-left: 4;
+}
