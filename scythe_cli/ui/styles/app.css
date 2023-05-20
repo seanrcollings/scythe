@@ -2,12 +2,9 @@ Screen {
   layers: bottom top;
 }
 
-Container {
-  layout: horizontal;
-}
-
 #main {
   layer: bottom;
+  margin-bottom: 2;
 }
 
 #header {
@@ -18,15 +15,4 @@ Container {
 #header #new {
   dock: right;
   background: $secondary;
-}
-
-#timers {
-  background: $background-lighten-1;
-  margin: 4;
-  padding: 1;
-}
-
-#timers #no-timers {
-  content-align: center middle;
-  color: $text-muted;
 }

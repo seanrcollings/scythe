@@ -1,0 +1,36 @@
+TimerContainer {
+  background: $background-lighten-1;
+  margin: 2 4;
+}
+
+TimerContainer #no-timers {
+  content-align: center middle;
+  color: $text-muted;
+}
+
+TimerContainer #timers-actions {
+  background: $background-lighten-2;
+  height: 3;
+}
+
+TimerContainer #timers-actions #today {
+  height: 3;
+  width: 1fr;
+  content-align: center middle;
+}
+
+TimerContainer #timers-actions #yesterday,
+TimerContainer #timers-actions #tomorrow {
+  content-align: center middle;
+  height: 3;
+  border: none;
+  width: auto;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: $text-muted;
+}
+
+TimerContainer #timers-list {
+  padding-bottom: 3;
+}

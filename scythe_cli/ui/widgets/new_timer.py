@@ -1,7 +1,7 @@
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal
-from textual.widgets import Input, Select, Static, Button
+from textual.widgets import Input, Select, Static, Button, Label
 from textual.message import Message
 
 
@@ -19,7 +19,7 @@ class NewTimerModal(Vertical):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="body"):
-            yield Static("New Timer", id="title")
+            yield Label("New Timer", id="title")
             yield Select([("Project 1", "Project 1")], prompt="Project", id="project")
             yield Select([("Task 1", "Task 1")], prompt="Task", id="task")
             yield Input(placeholder="Note", id="note")

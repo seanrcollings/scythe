@@ -17,6 +17,7 @@ oyaml = "^1.0"
 diskcache = "^5.4.0"
 textual = {extras = ["dev"], version = "^0.24.0"}
 httpx = "^0.24.0"
+toml = "^0.10.2"
 
 
 [tool.poetry.dev-dependencies]
@@ -29,6 +30,9 @@ types-PyYAML = "^6.0.3"
 
 [tool.poetry.scripts]
 scythe = "scythe_cli.application:application"
+
+[tool.poetry.group.dev.dependencies]
+types-toml = "^0.10.8.6"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

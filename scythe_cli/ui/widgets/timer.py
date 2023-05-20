@@ -1,7 +1,8 @@
 from textual import on
+from textual.events import Key
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
-from textual.widgets import Static, Button
+from textual.widgets import Static, Button, Label
 from textual.message import Message
 from textual.reactive import reactive
 from time import monotonic
@@ -45,7 +46,7 @@ class TimeDisplay(Static):
         self.time = 0
 
 
-class Timer(Static):
+class Timer(Static, can_focus=True):
     class Started(Message):
         def __init__(self, timer: "Timer") -> None:
             self.timer = timer
@@ -61,6 +62,8 @@ class Timer(Static):
         project: str,
         task: str,
         note: str,
+        seconds: float = 0,
+        is_running: bool = False,
         *,
         expand: bool = False,
         shrink: bool = False,
@@ -73,6 +76,8 @@ class Timer(Static):
         self.project = project
         self.task_name = task
         self.note = note
+        self.seconds = seconds
+        self._is_running = is_running
 
         super().__init__(
             expand=expand,
@@ -86,12 +91,19 @@ class Timer(Static):
 
     def compose(self) -> ComposeResult:
         with Horizontal():
-            with Vertical():
-                yield Static(self.project, id="project")
-                yield Static(self.task_name, id="task")
-                yield Static(self.note, id="description")
+            with Vertical(id="info"):
+                yield Label(self.project, id="project")
+                yield Label(self.task_name, id="task")
+                yield Label(self.note, id="description")
 
-            yield TimeDisplay()
+            display = TimeDisplay()
+            display.time = self.seconds
+            display.total = self.seconds
+
+            if self._is_running:
+                self.start_timer()
+
+            yield display
 
             with Horizontal(id="actions"):
                 yield Button("Start", id="start")
@@ -99,10 +111,27 @@ class Timer(Static):
 
     @on(Button.Pressed, "#start")
     def on_start(self, event):
-        self.post_message(self.Started(self))
-        self.add_class("running")
+        self.start_timer()
 
     @on(Button.Pressed, "#stop")
     def on_stop(self, event):
+        self.post_message(self.Stopped(self))
+        self.remove_class("running")
+
+    def on_key(self, event: Key):
+        if event.key == "enter":
+            self.toggle_timer()
+
+    def toggle_timer(self):
+        if self.has_class("running"):
+            self.stop_timer()
+        else:
+            self.start_timer()
+
+    def start_timer(self):
+        self.post_message(self.Started(self))
+        self.add_class("running")
+
+    def stop_timer(self):
         self.post_message(self.Stopped(self))
         self.remove_class("running")

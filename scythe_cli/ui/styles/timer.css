@@ -1,20 +1,26 @@
 Timer {
-  height: 7;
-  border: round grey;
-  padding: 1;
+  height: 5;
+  padding: 1 2;
+  background: $panel;
+  margin: 1;
 }
 
-Timer Static {
+Timer:focus {
+  background: $panel-lighten-1;
+}
+
+Timer #info {
+  width: 2fr;
+}
+
+Timer TimeDisplay {
   width: 1fr;
-}
-
-TimeDisplay {
   content-align: right middle;
-  height: 4;
+  height: 100%;
 }
 
 #actions {
-  content-align: right middle;
+  height: 100%;
 }
 
 #start {
