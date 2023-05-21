@@ -1,15 +1,17 @@
+import datetime
 from pathlib import Path
 from typing import Type
 import webbrowser
+
 from textual import on
 from textual.app import App, CSSPathType, ComposeResult
 from textual.driver import Driver
 from textual.widgets import Footer, Header, Button
 from textual.containers import Vertical
+
 from scythe_cli import constants
 from scythe_cli.config import Config
 from scythe_cli.harvest import AsyncHarvest
-
 from scythe_cli.ui.widgets import TimerContainer, Actions, NewTimerModal
 
 
@@ -32,6 +34,7 @@ class ScytheApp(App):
         watch_css: bool = False,
     ):
         super().__init__(driver_class, css_path, watch_css)
+        self.current_day = datetime.datetime.now()
         self.config = config
         self.harvest = AsyncHarvest(config.token, config.account_id)
 
@@ -43,10 +46,11 @@ class ScytheApp(App):
             yield Actions(id="header")
             yield TimerContainer(harvest=self.harvest, id="timers")
 
-        yield NewTimerModal()
+        yield NewTimerModal(harvest=self.harvest, user_id=self.config.user_id)
 
-    async def on_unmount(self):
+    async def action_quit(self):
         await self.harvest.close()
+        self.exit()
 
     @on(Button.Pressed, "#new")
     async def on_new(self, event: Button.Pressed):
@@ -61,6 +65,10 @@ class ScytheApp(App):
         self.close_new_modal()
         container = self.query_one(TimerContainer)
         await container.add_timer(event.project, event.task, event.note)
+
+    @on(TimerContainer.ChangeDay)
+    async def on_back(self, event: TimerContainer.ChangeDay):
+        self.current_day = event.day
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""

@@ -1,5 +1,49 @@
 import typing as t
 import httpx
+import msgspec
+
+
+class TimeEntryProject(msgspec.Struct):
+    id: int
+    name: str
+
+
+class TimeEntryTask(msgspec.Struct):
+    id: int
+    name: str
+
+
+class TimeEntry(msgspec.Struct):
+    id: int
+    notes: str
+    hours: float
+    is_running: bool
+
+    project: TimeEntryProject
+    task: TimeEntryTask
+
+    def seconds(self):
+        return self.hours * 60 * 60
+
+
+class TimeEntryResponse(msgspec.Struct):
+    time_entries: list[TimeEntry]
+
+
+class TaskAssignment(msgspec.Struct):
+    id: int
+    task: TimeEntryTask
+
+
+class ProjectAssignment(msgspec.Struct):
+    id: int
+    project: TimeEntryProject
+    task_assignments: list[TaskAssignment]
+    is_active: bool
+
+
+class ProjectAssignmentResponse(msgspec.Struct):
+    project_assignments: list[ProjectAssignment]
 
 
 class AsyncHarvest:
@@ -25,15 +69,20 @@ class AsyncHarvest:
     async def close(self):
         await self.client.aclose()
 
+    async def get_user_projects(self) -> list[ProjectAssignment]:
+        response = await self.client.get(f"users/me/project_assignments")
+        return msgspec.json.decode(
+            response.content, type=ProjectAssignmentResponse
+        ).project_assignments
+
     async def get_time_entries(
         self, params: t.Mapping[str, str] | None = None
-    ) -> t.Mapping[str, t.Any]:
+    ) -> list[TimeEntry]:
         response = await self.client.get(
             "time_entries",
             params=params,
         )
-        return response.json()
-
-    async def get_time_entry(self, id: int) -> t.Mapping[str, t.Any]:
-        response = await self.client.get(f"time_entries/{id}")
-        return response.json()
+        return msgspec.json.decode(
+            response.content,
+            type=TimeEntryResponse,
+        ).time_entries

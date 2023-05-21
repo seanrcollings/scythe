@@ -18,6 +18,7 @@ diskcache = "^5.4.0"
 textual = {extras = ["dev"], version = "^0.24.0"}
 httpx = "^0.24.0"
 toml = "^0.10.2"
+msgspec = "^0.15.1"
 
 
 [tool.poetry.dev-dependencies]

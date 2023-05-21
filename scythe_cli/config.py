@@ -14,6 +14,7 @@ class QuickStartConfig(pydantic.BaseModel):
 class Config(pydantic.BaseModel):
     token: str
     account_id: str
+    user_id: str
     quickstart: list[QuickStartConfig]
 
     @classmethod

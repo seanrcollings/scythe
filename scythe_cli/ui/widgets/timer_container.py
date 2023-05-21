@@ -35,6 +35,11 @@ class ViewingDay(Widget):
 
 
 class TimerContainer(Widget):
+    class ChangeDay(Message):
+        def __init__(self, day: datetime):
+            self.day = day
+            super().__init__()
+
     viewing_day: reactive[datetime] = reactive(datetime.now)
 
     def __init__(
@@ -77,7 +82,7 @@ class TimerContainer(Widget):
             await timers.mount(LoadingIndicator())
 
         today = self.viewing_day.strftime("%Y-%m-%d")
-        data = await self.harvest.get_time_entries(
+        entries = await self.harvest.get_time_entries(
             {
                 "from": today,
                 "to": today,
@@ -89,20 +94,20 @@ class TimerContainer(Widget):
         else:
             timers.query("*").remove()
 
-        if data["time_entries"]:
+        if entries:
             await asyncio.wait(
                 [
                     timers.mount(
                         Timer(
-                            project=entry["project"]["name"],
-                            task=entry["task"]["name"],
-                            note=entry["notes"],
-                            seconds=get_seconds(entry["hours"]),
-                            is_running=entry["is_running"],
-                            id=f"timer-{entry['id']}",
+                            project=entry.project.name,
+                            task=entry.task.name,
+                            note=entry.notes,
+                            seconds=entry.seconds(),
+                            is_running=entry.is_running,
+                            id=f"timer-{entry.id}",
                         )
                     )
-                    for entry in data["time_entries"]
+                    for entry in entries
                 ]
             )
         else:
@@ -131,14 +136,18 @@ class TimerContainer(Widget):
     @on(Button.Pressed, "#yesterday")
     def on_yesterday(self, event: Button.Pressed):
         self.viewing_day = self.viewing_day - timedelta(days=1)
+        self.post_message(self.ChangeDay(self.viewing_day))
 
     @on(ViewingDay.Back)
     def on_back(self, event: ViewingDay.Back):
         self.viewing_day = datetime.now()
+        event.stop()
+        self.post_message(self.ChangeDay(self.viewing_day))
 
     @on(Button.Pressed, "#tomorrow")
     def on_tomorrow(self, event: Button.Pressed):
         self.viewing_day = self.viewing_day + timedelta(days=1)
+        self.post_message(self.ChangeDay(self.viewing_day))
 
     async def add_timer(self, project: str, task: str, note: str):
         timers = self.query(VerticalScroll).first()
