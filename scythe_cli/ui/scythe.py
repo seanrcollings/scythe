@@ -64,7 +64,7 @@ class ScytheApp(App):
     async def on_new_timer(self, event: NewTimerModal.NewTimer):
         self.close_new_modal()
         container = self.query_one(TimerContainer)
-        await container.add_timer(event.project, event.task, event.note)
+        await container.add_timer(event.entry)
 
     @on(TimerContainer.ChangeDay)
     async def on_back(self, event: TimerContainer.ChangeDay):

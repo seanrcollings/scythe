@@ -9,7 +9,7 @@ from textual.reactive import reactive
 from textual.message import Message
 
 from scythe_cli.utils import get_seconds
-from scythe_cli.harvest import AsyncHarvest
+from scythe_cli.harvest import AsyncHarvest, TimeEntry
 
 from .timer import Timer, TimeDisplay
 
@@ -98,14 +98,7 @@ class TimerContainer(Widget):
             await asyncio.wait(
                 [
                     timers.mount(
-                        Timer(
-                            project=entry.project.name,
-                            task=entry.task.name,
-                            note=entry.notes,
-                            seconds=entry.seconds(),
-                            is_running=entry.is_running,
-                            id=f"timer-{entry.id}",
-                        )
+                        Timer(entry=entry, harvest=self.harvest, id=f"timer-{entry.id}")
                     )
                     for entry in entries
                 ]
@@ -122,16 +115,6 @@ class TimerContainer(Widget):
                     timer.remove_class("running")
                     display = timer.query_one(TimeDisplay)
                     display.stop()
-            else:
-                timer.add_class("running")
-                display = timer.query_one(TimeDisplay)
-                display.start()
-
-    @on(Timer.Stopped)
-    def on_timer_stopped(self, event: Timer.Stopped):
-        event.timer.remove_class("running")
-        display = event.timer.query_one(TimeDisplay)
-        display.stop()
 
     @on(Button.Pressed, "#yesterday")
     def on_yesterday(self, event: Button.Pressed):
@@ -149,6 +132,6 @@ class TimerContainer(Widget):
         self.viewing_day = self.viewing_day + timedelta(days=1)
         self.post_message(self.ChangeDay(self.viewing_day))
 
-    async def add_timer(self, project: str, task: str, note: str):
+    async def add_timer(self, entry: TimeEntry):
         timers = self.query(VerticalScroll).first()
-        await timers.mount(Timer(project=project, task=task, note=note))
+        await timers.mount(Timer(entry=entry, harvest=self.harvest))

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Iterable
 from textual import on, work
 from textual.app import ComposeResult
@@ -5,7 +6,7 @@ from textual.containers import Vertical, Horizontal
 from textual.widgets import Input, Select, Static, Button, Label
 from textual.message import Message
 
-from scythe_cli.harvest import AsyncHarvest
+from scythe_cli.harvest import AsyncHarvest, TimeEntry
 
 
 class NewTimerModal(Vertical):
@@ -13,10 +14,8 @@ class NewTimerModal(Vertical):
         ...
 
     class NewTimer(Message):
-        def __init__(self, project: str, task: str, note: str):
-            self.project = project
-            self.task = task
-            self.note = note
+        def __init__(self, entry: TimeEntry):
+            self.entry = entry
 
             super().__init__()
 
@@ -45,20 +44,20 @@ class NewTimerModal(Vertical):
         self.projects = await self.harvest.get_user_projects()
         projects_select = self.query_one("#project", Select)
         projects_select.set_options(
-            [(p.project.name, p.id) for p in self.projects if p.is_active]
-        )
-        projects_select.set_options(
-            [(p.project.name, p.id) for p in self.projects if p.is_active]
+            [(p.project.name, p.project.id) for p in self.projects if p.is_active]
         )
 
     def on_select_changed(self, event: Select.Changed):
+        if not event.control:
+            return
+
         if event.control.id == "project":
             self.on_project_changed(event)
 
     def on_project_changed(self, event: Select.Changed):
         if not event.value:
             return
-        project = next((p for p in self.projects if p.id == event.value), None)
+        project = next((p for p in self.projects if p.project.id == event.value), None)
 
         if not project:
             return
@@ -82,7 +81,16 @@ class NewTimerModal(Vertical):
         self.clear()
 
     async def create_timer(self):
-        ...
+        data = self.data()
+        timer = await self.harvest.create_timer(
+            {
+                "project_id": data["project"],
+                "task_id": data["task"],
+                "notes": data["note"],
+                "spent_date": datetime.now().strftime("%Y-%m-%d"),
+            }
+        )
+        return timer
 
     def data(self):
         inputs = self.query(Input)

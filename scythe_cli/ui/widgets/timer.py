@@ -7,6 +7,8 @@ from textual.message import Message
 from textual.reactive import reactive
 from time import monotonic
 
+from scythe_cli.harvest import AsyncHarvest, TimeEntry
+
 
 class TimeDisplay(Static):
     """A widget to display elapsed time."""
@@ -59,11 +61,8 @@ class Timer(Static, can_focus=True):
 
     def __init__(
         self,
-        project: str,
-        task: str,
-        note: str,
-        seconds: float = 0,
-        is_running: bool = False,
+        entry: TimeEntry,
+        harvest: AsyncHarvest,
         *,
         expand: bool = False,
         shrink: bool = False,
@@ -73,11 +72,8 @@ class Timer(Static, can_focus=True):
         classes: str | None = None,
         disabled: bool = False,
     ) -> None:
-        self.project = project
-        self.task_name = task
-        self.note = note
-        self.seconds = seconds
-        self._is_running = is_running
+        self.entry = entry
+        self.harvest = harvest
 
         super().__init__(
             expand=expand,
@@ -92,31 +88,34 @@ class Timer(Static, can_focus=True):
     def compose(self) -> ComposeResult:
         with Horizontal():
             with Vertical(id="info"):
-                yield Label(self.project, id="project")
-                yield Label(self.task_name, id="task")
-                yield Label(self.note, id="description")
+                yield Label(self.entry.project.name, id="project")
+                yield Label(self.entry.task.name, id="task")
+                yield Label(self.entry.notes, id="description")
 
-            display = TimeDisplay()
-            display.time = self.seconds
-            display.total = self.seconds
-
-            if self._is_running:
-                self.start_timer()
-
-            yield display
+            yield TimeDisplay()
 
             with Horizontal(id="actions"):
                 yield Button("Start", id="start")
                 yield Button("Stop", id="stop")
 
+    def on_mount(self) -> None:
+        if self.entry.is_running:
+            self.start_timer()
+
+        seconds = self.entry.seconds()
+        display = self.query_one(TimeDisplay)
+        display.time = seconds
+        display.total = seconds
+
     @on(Button.Pressed, "#start")
-    def on_start(self, event):
+    async def on_start(self, event):
+        await self.harvest.start_timer(self.entry.id)
         self.start_timer()
 
     @on(Button.Pressed, "#stop")
-    def on_stop(self, event):
-        self.post_message(self.Stopped(self))
-        self.remove_class("running")
+    async def on_stop(self, event):
+        await self.harvest.stop_timer(self.entry.id)
+        self.stop_timer()
 
     def on_key(self, event: Key):
         if event.key == "enter":
@@ -129,9 +128,13 @@ class Timer(Static, can_focus=True):
             self.start_timer()
 
     def start_timer(self):
-        self.post_message(self.Started(self))
         self.add_class("running")
+        display = self.query_one(TimeDisplay)
+        display.start()
+        self.post_message(self.Started(self))
 
     def stop_timer(self):
-        self.post_message(self.Stopped(self))
         self.remove_class("running")
+        display = self.query_one(TimeDisplay)
+        display.stop()
+        self.post_message(self.Stopped(self))

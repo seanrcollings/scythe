@@ -69,6 +69,18 @@ class AsyncHarvest:
     async def close(self):
         await self.client.aclose()
 
+    async def create_timer(self, data: t.Mapping[str, t.Any]) -> TimeEntry:
+        response = await self.client.post("time_entries", json=data)
+        return msgspec.json.decode(response.content, type=TimeEntry)
+
+    async def start_timer(self, id: int) -> TimeEntry:
+        response = await self.client.patch(f"time_entries/{id}/restart")
+        return msgspec.json.decode(response.content, type=TimeEntry)
+
+    async def stop_timer(self, id: int) -> TimeEntry:
+        response = await self.client.patch(f"time_entries/{id}/stop")
+        return msgspec.json.decode(response.content, type=TimeEntry)
+
     async def get_user_projects(self) -> list[ProjectAssignment]:
         response = await self.client.get(f"users/me/project_assignments")
         return msgspec.json.decode(
