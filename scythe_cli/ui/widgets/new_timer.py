@@ -75,9 +75,9 @@ class NewTimerModal(Vertical):
         self.clear()
 
     @on(Button.Pressed, "#save")
-    async def on_save(self, event: Button.Pressed):
+    async def on_save(self, event: Button.Pressed) -> None:
         timer = await self.create_timer()
-        self.post_message(self.NewTimer(**self.data()))
+        self.post_message(self.NewTimer(timer))
         self.clear()
 
     async def create_timer(self):

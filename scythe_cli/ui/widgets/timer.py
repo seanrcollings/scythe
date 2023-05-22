@@ -1,8 +1,8 @@
 from textual import on
 from textual.events import Key
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical
-from textual.widgets import Static, Button, Label
+from textual.containers import Horizontal, Container
+from textual.widgets import Static, Button, Label, ListView
 from textual.message import Message
 from textual.reactive import reactive
 from time import monotonic
@@ -48,7 +48,7 @@ class TimeDisplay(Static):
         self.time = 0
 
 
-class Timer(Static, can_focus=True):
+class Timer(Container, can_focus=True):
     class Started(Message):
         def __init__(self, timer: "Timer") -> None:
             self.timer = timer
@@ -64,9 +64,6 @@ class Timer(Static, can_focus=True):
         entry: TimeEntry,
         harvest: AsyncHarvest,
         *,
-        expand: bool = False,
-        shrink: bool = False,
-        markup: bool = True,
         name: str | None = None,
         id: str | None = None,
         classes: str | None = None,
@@ -76,9 +73,6 @@ class Timer(Static, can_focus=True):
         self.harvest = harvest
 
         super().__init__(
-            expand=expand,
-            shrink=shrink,
-            markup=markup,
             name=name,
             id=id,
             classes=classes,
@@ -86,17 +80,17 @@ class Timer(Static, can_focus=True):
         )
 
     def compose(self) -> ComposeResult:
-        with Horizontal():
-            with Vertical(id="info"):
-                yield Label(self.entry.project.name, id="project")
-                yield Label(self.entry.task.name, id="task")
-                yield Label(self.entry.notes, id="description")
+        with Horizontal(id="info"):
+            yield Label(self.entry.project.name, id="project")
+            yield Label(self.entry.task.name, id="task")
+            yield Label(self.entry.notes, id="description")
 
-            yield TimeDisplay()
+        yield TimeDisplay()
 
-            with Horizontal(id="actions"):
-                yield Button("Start", id="start")
-                yield Button("Stop", id="stop")
+        with Horizontal(id="actions"):
+            yield Button.success("Start", id="start")
+            yield Button.error("Stop", id="stop")
+            yield Button("Edit", id="edit")
 
     def on_mount(self) -> None:
         if self.entry.is_running:
@@ -131,10 +125,10 @@ class Timer(Static, can_focus=True):
         self.add_class("running")
         display = self.query_one(TimeDisplay)
         display.start()
-        self.post_message(self.Started(self))
+        # self.post_message(self.Started(self))
 
     def stop_timer(self):
         self.remove_class("running")
         display = self.query_one(TimeDisplay)
         display.stop()
-        self.post_message(self.Stopped(self))
+        # self.post_message(self.Stopped(self))

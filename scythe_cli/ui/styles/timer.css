@@ -3,55 +3,68 @@ Timer {
   padding: 1 2;
   background: $panel;
   margin: 1;
+  layout: horizontal;
 }
 
 Timer:focus {
   background: $panel-lighten-1;
 }
 
+Timer #project {
+  text-style: bold;
+}
+
+Timer #task {
+  text-style: italic;
+}
+
+Timer #description {
+  opacity: 40%;
+}
+
 Timer #info {
-  width: 2fr;
+  width: 1.5fr;
+  height: 5;
+  layout: vertical;
 }
 
 Timer TimeDisplay {
   width: 1fr;
   content-align: right middle;
   height: 100%;
+  padding-right: 2;
 }
 
-#actions {
+Timer #actions {
+  layout: horizontal;
+  width: 22;
   height: 100%;
+  content-align: right middle;
 }
 
-#start {
-  background: $success;
-  width: 10;
-  dock: right;
+Timer #start,
+Timer #stop {
+  min-width: 10;
+  padding: 0;
 }
 
-#stop {
-  background: $error;
-  width: 10;
-  display: none;
-  dock: right;
-}
-
-.running #start {
+Timer #stop {
   display: none;
 }
 
-.running #stop {
+Timer.running #start {
+  display: none;
+}
+
+Timer.running #stop {
   display: block;
 }
 
-#project {
-  text-style: bold;
-}
-
-#task {
-  text-style: italic;
-}
-
-#description {
-  opacity: 40%;
+Timer #actions #edit {
+  min-width: 10;
+  margin-left: 1;
+  width: 4;
+  background: black;
+  content-align: center middle;
+  background: $primary-background-darken-2;
 }

@@ -5,4 +5,4 @@ from textual.widgets import Button
 
 class Actions(Horizontal):
     def compose(self) -> ComposeResult:
-        yield Button("New", id="new")
+        yield Button("New Timer", id="new")

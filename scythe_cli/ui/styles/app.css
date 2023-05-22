@@ -16,3 +16,9 @@ Screen {
   dock: right;
   background: $secondary;
 }
+
+.spacer {
+  width: 1fr;
+  height: 100%;
+  background: red;
+}

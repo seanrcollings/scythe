@@ -81,7 +81,7 @@ class ScytheApp(App):
     def action_open_new_modal(self):
         modal = self.query_one(NewTimerModal)
         modal.add_class("open")
-        modal.children[0].focusable_children[0].focus()
+        modal.query_one("#project").focus()
 
         main = self.query_one("#main")
         main.disabled = True
