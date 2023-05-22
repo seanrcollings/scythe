@@ -32,7 +32,7 @@ class SharedParams:
 
 @arc.command("scythe")
 def scythe(params: SharedParams):
-    from scythe_cli.ui.scythe import ScytheApp
+    from scythe_cli.ui.apps import ScytheApp
 
     app = ScytheApp(config=params.config())
     app.run()
@@ -47,6 +47,7 @@ def handle_api_error(ctx, ex: HarvestError):
 @scythe.subcommand
 def init(
     prompt: Prompt,
+    params: SharedParams,
     account_id: str = arc.Argument(prompt="Harvest Account ID: "),
     token: str = arc.Argument(prompt="Harvest Token: "),
 ):
@@ -54,6 +55,7 @@ def init(
     Create your API token at: [https://id.getharvest.com/developers].
     This will provide you the account id and token for your config file.
     """
+
     with Harvest(token, account_id) as client:
         with console.status("Verifying credentials..."):
             user = client.get_user()
@@ -66,10 +68,18 @@ def init(
             return
 
         with console.status("Creating Config file..."):
-            constants.CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-            config = Config(account_id=account_id, token=token)
-            constants.CONFIG_FILE.write_text(
-                toml.dumps(config.dict(skip_defaults=True))
-            )
+            params.config_path.parent.mkdir(parents=True, exist_ok=True)
+            config = Config(account_id=account_id, token=token, user_id=user.id)
+            params.config_path.write_text(toml.dumps(config.dict(skip_defaults=True)))
 
         console.print("Config file created!")
+
+
+@scythe.subcommand("quickstart", "qs")
+def quickstart():
+    ...
+
+
+@quickstart.subcommand
+def add():
+    ...

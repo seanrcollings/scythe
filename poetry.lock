@@ -159,14 +159,14 @@ files = [
 
 [[package]]
 name = "arc-cli"
-version = "8.4.0"
+version = "8.4.1"
 description = "Package for creating CLI's with ease."
 category = "main"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "arc_cli-8.4.0-py3-none-any.whl", hash = "sha256:961f8b00e6257f2c0e50cd48cb5b8366c29a1f5712ed691bea6b958946a72a19"},
-    {file = "arc_cli-8.4.0.tar.gz", hash = "sha256:fd033ec5b8c6356bc6e75a27660b23a6dd29e2e451bc19f7d5c97528d0b0a0a9"},
+    {file = "arc_cli-8.4.1-py3-none-any.whl", hash = "sha256:350ac26bd02739c57d3ae84643c617b912fa5a97b99b15c3faedbf0ec8495ef5"},
+    {file = "arc_cli-8.4.1.tar.gz", hash = "sha256:f0f7cdae1994e05078af82f678c5ad767f3563219d71bad5b8c20b4dbe3e9422"},
 ]
 
 [[package]]

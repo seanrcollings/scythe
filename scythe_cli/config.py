@@ -7,13 +7,14 @@ class QuickStartConfig(pydantic.BaseModel):
     name: str
     project_id: int
     task_id: int
-    url: str | None
     notes: str | None
+    exec: str | None
 
 
 class Config(pydantic.BaseModel):
     token: str
     account_id: str
+    user_id: str
     quickstart: list[QuickStartConfig] = []
 
     @classmethod

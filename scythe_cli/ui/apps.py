@@ -94,6 +94,10 @@ class ScytheApp(App):
         main.disabled = False
 
 
+class AddQuickLaunchEntry(App):
+    ...
+
+
 if __name__ == "__main__":
     app = ScytheApp(config=Config.load(constants.CONFIG_FILE))
     app.run()
