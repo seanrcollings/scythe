@@ -1,21 +1,34 @@
 import arc
 from scythe_cli import constants
 from scythe_cli.config import Config
-from scythe_cli.ui.scythe import ScytheApp
 
 arc.configure(environment="development", debug=True)
 
 
-@arc.command("scythe")
-def scythe(
-    *,
+@arc.group
+class SharedParams:
     config_path: arc.types.ValidPath = arc.Option(
         name="config",
         short="c",
         default=constants.CONFIG_FILE,
         desc="Config file to use",
-    ),
-):
-    config = Config.load(config_path)
-    app = ScytheApp(config=config)
+    )
+
+    def config(self):
+        return Config.load(self.config_path)
+
+
+@arc.command("scythe")
+def scythe(params: SharedParams):
+    from scythe_cli.ui.scythe import ScytheApp
+
+    app = ScytheApp(config=params.config())
     app.run()
+
+
+@scythe.subcommand
+def init(
+    account_id: int = arc.Argument(prompt="Harvest Account ID: "),
+    token: str = arc.Argument(prompt="Harvest Token: "),
+):
+    ...

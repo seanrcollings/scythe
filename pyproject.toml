@@ -12,7 +12,7 @@ python = "^3.10"
 requests = "^2.25.1"
 xdg = "^5.1.1"
 pydantic = "^1.9.0"
-arc-cli = "8.1.5"
+arc-cli = "^8.4.0"
 oyaml = "^1.0"
 diskcache = "^5.4.0"
 textual = {extras = ["dev"], version = "^0.24.0"}

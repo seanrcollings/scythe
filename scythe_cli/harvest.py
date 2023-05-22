@@ -56,6 +56,7 @@ class AsyncHarvest:
             headers={
                 "Harvest-Account-Id": account_id,
                 "Authorization": f"Bearer {token}",
+                "User-Agent": "Scythe CLI (seanrcollings@gmail.com)",
             },
         )
 

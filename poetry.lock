@@ -159,14 +159,14 @@ files = [
 
 [[package]]
 name = "arc-cli"
-version = "8.1.5"
-description = "A Regular CLI"
+version = "8.4.0"
+description = "Package for creating CLI's with ease."
 category = "main"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "arc_cli-8.1.5-py3-none-any.whl", hash = "sha256:bf3d990d1a8b0b270da67bfd640364ba7995b96bd02201a62bd2b8bdd8055506"},
-    {file = "arc_cli-8.1.5.tar.gz", hash = "sha256:423dd3583392c862ea699b391cde7486276600ee8121cdde816c25c988589012"},
+    {file = "arc_cli-8.4.0-py3-none-any.whl", hash = "sha256:961f8b00e6257f2c0e50cd48cb5b8366c29a1f5712ed691bea6b958946a72a19"},
+    {file = "arc_cli-8.4.0.tar.gz", hash = "sha256:fd033ec5b8c6356bc6e75a27660b23a6dd29e2e451bc19f7d5c97528d0b0a0a9"},
 ]
 
 [[package]]
@@ -494,14 +494,14 @@ files = [
 
 [[package]]
 name = "httpcore"
-version = "0.17.0"
+version = "0.17.1"
 description = "A minimal low-level HTTP client."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "httpcore-0.17.0-py3-none-any.whl", hash = "sha256:0fdfea45e94f0c9fd96eab9286077f9ff788dd186635ae61b312693e4d943599"},
-    {file = "httpcore-0.17.0.tar.gz", hash = "sha256:cc045a3241afbf60ce056202301b4d8b6af08845e3294055eb26b09913ef903c"},
+    {file = "httpcore-0.17.1-py3-none-any.whl", hash = "sha256:628e768aaeec1f7effdc6408ba1c3cdbd7487c1fc570f7d66844ec4f003e1ca4"},
+    {file = "httpcore-0.17.1.tar.gz", hash = "sha256:caf508597c525f9b8bfff187e270666309f63115af30f7d68b16143a403c8356"},
 ]
 
 [package.dependencies]
@@ -516,14 +516,14 @@ socks = ["socksio (>=1.0.0,<2.0.0)"]
 
 [[package]]
 name = "httpx"
-version = "0.24.0"
+version = "0.24.1"
 description = "The next generation HTTP client."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "httpx-0.24.0-py3-none-any.whl", hash = "sha256:447556b50c1921c351ea54b4fe79d91b724ed2b027462ab9a329465d147d5a4e"},
-    {file = "httpx-0.24.0.tar.gz", hash = "sha256:507d676fc3e26110d41df7d35ebd8b3b8585052450f4097401c9be59d928c63e"},
+    {file = "httpx-0.24.1-py3-none-any.whl", hash = "sha256:06781eb9ac53cde990577af654bd990a4949de37a28bdb4a230d434f3a30b9bd"},
+    {file = "httpx-0.24.1.tar.gz", hash = "sha256:5853a43053df830c20f8110c5e69fe44d035d850b2dfe795e196f00fdb774bdd"},
 ]
 
 [package.dependencies]
@@ -1721,4 +1721,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "3b266c8d8edf9ce0145e3c8a1b7245d9ed68099c4e6aab36f4992936b7eae848"
+content-hash = "3dc9a76ebd9b0b8321c28466813f3599172d8d3e73e7f1956764f24de69671d8"
