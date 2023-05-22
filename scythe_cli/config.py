@@ -14,8 +14,7 @@ class QuickStartConfig(pydantic.BaseModel):
 class Config(pydantic.BaseModel):
     token: str
     account_id: str
-    user_id: str
-    quickstart: list[QuickStartConfig]
+    quickstart: list[QuickStartConfig] = []
 
     @classmethod
     def load(cls, path: Path):
