@@ -1,0 +1,55 @@
+TimerModal {
+  display: none;
+  width: 1fr;
+  height: 1fr;
+  layer: top;
+  opacity: 0;
+}
+
+TimerModal.open {
+  display: block;
+}
+
+TimerModal #body {
+  width: 1fr;
+  margin: 5 10;
+  padding: 0 1;
+  background: $background-lighten-1;
+  border: tall $background;
+  height: 25;
+}
+
+TimerModal #body #title {
+  text-style: bold;
+  border-bottom: solid $background-lighten-3;
+  padding-top: 1;
+}
+
+TimerModal #body Select,
+TimerModal #body Input {
+  width: 1fr;
+  margin: 1 0;
+}
+
+TimerModal #hours-container {
+  margin-bottom: 1;
+}
+
+TimerModal #hours-container #hours {
+  width: 20;
+  margin: 0;
+  dock: right;
+}
+
+TimerModal #actions {
+  padding-right: 1;
+}
+
+TimerModal #actions #action-buttons {
+  dock: right;
+  width: auto;
+}
+
+TimerModal #actions #save {
+  margin-left: 4;
+}

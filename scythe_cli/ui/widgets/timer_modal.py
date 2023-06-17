@@ -2,13 +2,15 @@ from datetime import datetime
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal
-from textual.widgets import Input, Select, Static, Button, Label
+from textual.widgets import Input, Select, Button, Label
 from textual.message import Message
+from textual.reactive import reactive
 
 from scythe_cli.harvest import AsyncHarvest, TimeEntry
+from scythe_cli.utils import display_time
 
 
-class NewTimerModal(Vertical):
+class TimerModal(Vertical):
     class Cancel(Message):
         ...
 
@@ -17,6 +19,12 @@ class NewTimerModal(Vertical):
             self.entry = entry
 
             super().__init__()
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+    ]
+
+    timer = reactive[TimeEntry | None](None)
 
     def __init__(self, harvest: AsyncHarvest, **kwargs):
         super().__init__(**kwargs)
@@ -28,11 +36,13 @@ class NewTimerModal(Vertical):
             yield Select([], prompt="Project", id="project")
             yield Select([], prompt="Task", id="task", disabled=True)
             yield Input(placeholder="Note", id="note")
+            with Horizontal(id="hours-container"):
+                yield Input(placeholder="0:00", id="hours")
 
             with Horizontal(id="actions"):
-                yield Static(id="spacer")
-                yield Button("Cancel", id="cancel")
-                yield Button("Save", id="save", variant="primary")
+                with Horizontal(id="action-buttons"):
+                    yield Button("Cancel", id="cancel")
+                    yield Button("Save", id="save", variant="primary")
 
     async def on_mount(self) -> None:
         self.get_projects()
@@ -44,6 +54,24 @@ class NewTimerModal(Vertical):
         projects_select.set_options(
             [(p.project.name, p.project.id) for p in self.projects if p.is_active]
         )
+
+    def watch_timer(self, timer: TimeEntry | None) -> None:
+        if not timer:
+            return
+
+        projects_select = self.query_one("#project", Select)
+        projects_select.value = timer.project.id
+
+        self.on_select_changed(Select.Changed(projects_select, timer.project.id))
+
+        tasks_select = self.query_one("#task", Select)
+        tasks_select.value = timer.task.id
+
+        notes_input = self.query_one("#note", Input)
+        notes_input.value = timer.notes or ""
+
+        hours_input = self.query_one("#hours", Input)
+        hours_input.value = display_time(timer.seconds(), "minutes")
 
     def on_select_changed(self, event: Select.Changed):
         if not event.control:
@@ -67,10 +95,15 @@ class NewTimerModal(Vertical):
             [(t.task.name, t.task.id) for t in project.task_assignments]
         )
 
+    def action_cancel(self):
+        self.post_message(self.Cancel())
+        self.clear()
+
     @on(Button.Pressed, "#cancel")
     async def on_cancel(self, event: Button.Pressed):
         self.post_message(self.Cancel())
         self.clear()
+        self.timer = None
 
     @on(Button.Pressed, "#save")
     async def on_save(self, event: Button.Pressed) -> None:

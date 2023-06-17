@@ -28,7 +28,7 @@ class TimeDisplay(Static):
 
     def watch_time(self, time: float) -> None:
         """Called when the time attribute changes."""
-        return utils.display_time(time)
+        self.update(utils.display_time(time))
 
     def start(self) -> None:
         """Method to start (or resume) time updating."""
@@ -54,6 +54,11 @@ class Timer(Container, can_focus=True):
             super().__init__()
 
     class Stopped(Message):
+        def __init__(self, timer: "Timer") -> None:
+            self.timer = timer
+            super().__init__()
+
+    class Edit(Message):
         def __init__(self, timer: "Timer") -> None:
             self.timer = timer
             super().__init__()
@@ -109,6 +114,10 @@ class Timer(Container, can_focus=True):
     async def on_stop(self, event):
         await self.harvest.stop_timer(self.entry.id)
         self.stop_timer()
+
+    @on(Button.Pressed, "#edit")
+    async def on_edit(self, event):
+        self.post_message(self.Edit(self))
 
     def on_key(self, event: Key):
         if event.key == "enter":

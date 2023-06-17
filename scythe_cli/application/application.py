@@ -7,8 +7,8 @@ from arc.prompt import Prompt
 import keyring
 
 from scythe_cli.harvest import AsyncHarvest, Harvest, HarvestError
-from ..console import console
-from .. import utils
+from scythe_cli.console import console
+from scythe_cli import utils
 
 arc.configure(
     environment="development",
@@ -22,23 +22,10 @@ from scythe_cli.application import timers
 
 
 @arc.command("scythe")
-def scythe():
+def scythe() -> None:
     from scythe_cli.ui.apps import ScytheApp
 
-    access_token = keyring.get_password("scythe", "access_token")
-    refresh_token = keyring.get_password("scythe", "refresh_token")
-
-    if not access_token or not refresh_token:
-        console.print("Please run [b]scythe init[/b] to authorize with Harvest.")
-        arc.exit(1)
-
-    harvest = AsyncHarvest(access_token, refresh_token)
-
-    @harvest.on_refresh
-    def on_refresh(access_token, refresh_token):
-        keyring.set_password("scythe", "access_token", access_token)
-        keyring.set_password("scythe", "refresh_token", refresh_token)
-
+    harvest = utils.get_async_harvest()
     app = ScytheApp(harvest=harvest)
     app.run()
 

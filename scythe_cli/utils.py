@@ -6,7 +6,7 @@ import arc
 import keyring
 
 from scythe_cli.console import console
-from scythe_cli.harvest import Harvest
+from scythe_cli.harvest import Harvest, AsyncHarvest
 
 
 def get_hours_and_minutes(val: float) -> tuple[int, int]:
@@ -25,7 +25,7 @@ def fmt_time(hours: int, minutes: int) -> str:
     return f"{hours}:{minutes_str}"
 
 
-def get_harvest():
+def _get_harvest(async_harvest: bool = False):
     access_token = keyring.get_password("scythe", "access_token")
     refresh_token = keyring.get_password("scythe", "refresh_token")
 
@@ -33,7 +33,11 @@ def get_harvest():
         console.print("Please run [b]scythe init[/b] to authorize with Harvest.")
         arc.exit(1)
 
-    harvest = Harvest(access_token, refresh_token)
+    harvest: Harvest | AsyncHarvest = (
+        Harvest(access_token, refresh_token)
+        if not async_harvest
+        else AsyncHarvest(access_token, refresh_token)
+    )
 
     @harvest.on_refresh
     def on_refresh(access_token, refresh_token):
@@ -43,7 +47,24 @@ def get_harvest():
     return harvest
 
 
-def display_time(time: float):
+def get_harvest() -> Harvest:
+    return _get_harvest(False)
+
+
+def get_async_harvest() -> AsyncHarvest:
+    return _get_harvest(True)
+
+
+def display_time(
+    time: float, precision: t.Literal["hours", "minutes", "seconds"] = "seconds"
+) -> str:
     minutes, seconds = divmod(time, 60)
     hours, minutes = divmod(minutes, 60)
-    return f"{hours:02,.0f}:{minutes:02.0f}:{seconds:02.0f}"
+
+    match precision:
+        case "hours":
+            return f"{hours:02.0f}"
+        case "minutes":
+            return f"{hours:02.0f}:{minutes:02.0f}"
+        case "seconds":
+            return f"{hours:02.0f}:{minutes:02.0f}:{seconds:02.0f}"
