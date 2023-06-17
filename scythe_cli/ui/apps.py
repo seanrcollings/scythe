@@ -9,8 +9,6 @@ from textual.driver import Driver
 from textual.widgets import Footer, Header, Button
 from textual.containers import Vertical
 
-from scythe_cli import constants
-from scythe_cli.config import Config
 from scythe_cli.harvest import AsyncHarvest
 from scythe_cli.ui.widgets import TimerContainer, Actions, NewTimerModal
 

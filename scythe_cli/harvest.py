@@ -184,7 +184,10 @@ class AsyncHarvest:
             self._on_refresh(self.access_token, self.refresh_token)
 
 
-def refresh(func: t.Callable):
+T = t.TypeVar("T", bound=t.Callable[..., t.Any])
+
+
+def refresh(func: T) -> T:
     @functools.wraps(func)
     def inner(inst: "Harvest", *args, **kwargs):
         try:
@@ -197,7 +200,7 @@ def refresh(func: t.Callable):
             else:
                 raise e
 
-    return inner
+    return inner  # type: ignore
 
 
 class Harvest:
@@ -275,6 +278,10 @@ class Harvest:
             response.content,
             type=TimeEntryResponse,
         ).time_entries
+
+    @classmethod
+    def get(cls):
+        ...
 
     def _refresh(self):
         response = check(

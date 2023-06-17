@@ -1,24 +1,22 @@
+import typing as t
 import base64
-import pathlib
 import webbrowser
 import arc
 from arc import color
 from arc.prompt import Prompt
 import keyring
-from rich.console import Console
 
-import toml
-from scythe_cli import constants
-from scythe_cli.config import Config
 from scythe_cli.harvest import AsyncHarvest, Harvest, HarvestError
+from .console import console
+from . import utils
+
+from .quickstart import quickstart
 
 arc.configure(
     environment="development",
     debug=True,
     present=arc.PresentConfig(color=arc.ColorConfig(accent=color.fg.hex("#fa5d00"))),
 )
-
-console = Console()
 
 
 @arc.command("scythe")
@@ -43,23 +41,8 @@ def scythe():
     app.run()
 
 
-@scythe.handle(HarvestError)  # type: ignore
-def handle_api_error(ctx, ex: HarvestError):
-    console.print(f"[red]Error: {ex.response.status_code}[/red]")
-    console.print(
-        ex.response.json().get("error_description")
-        or ex.response.json().get("message")
-        or ex.response.text
-    )
-
-
 @scythe.subcommand
-def init(
-    prompt: Prompt,
-    config_path: pathlib.Path = arc.Option(
-        name="config", default=constants.CONFIG_FILE
-    ),
-):
+def init(prompt: Prompt):
     """Initialize Scythe with your Harvest credentials.
     Will ask you to log in to Harvest & authorize Scythe."""
 
@@ -90,11 +73,27 @@ def init(
         console.print("Credentials saved to keyring!")
 
 
-@scythe.subcommand("quickstart", "qs")
-def quickstart():
-    ...
+@scythe.subcommand
+def projects():
+
+    with utils.get_harvest() as harvest, console.status("Fetching projects..."):
+        projects = harvest.get_user_projects()
+
+    for project in projects:
+        console.print(f"[b]{project.project.name}[/b] [gray35]({project.project.id})")
+
+        for task in project.task_assignments:
+            console.print(f"     {task.task.name} [gray35]({task.task.id})")
 
 
-@quickstart.subcommand
-def add():
-    ...
+@scythe.handle(HarvestError)  # type: ignore
+def handle_api_error(ctx, ex: HarvestError):
+    console.print(f"[red]Error: {ex.response.status_code}[/red]")
+    console.print(
+        ex.response.json().get("error_description")
+        or ex.response.json().get("message")
+        or ex.response.text
+    )
+
+
+scythe.subcommand(quickstart, "qs")
