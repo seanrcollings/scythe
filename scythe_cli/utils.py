@@ -1,14 +1,12 @@
 from __future__ import annotations
-from logging import Logger
 import typing as t
-from arc.types import State
-
 import math
-import diskcache  # type: ignore
-import pydantic
-from rich.console import Console
 
-T = t.TypeVar("T")
+import arc
+import keyring
+
+from scythe_cli.console import console
+from scythe_cli.harvest import Harvest
 
 
 def get_hours_and_minutes(val: float) -> tuple[int, int]:
@@ -27,24 +25,25 @@ def fmt_time(hours: int, minutes: int) -> str:
     return f"{hours}:{minutes_str}"
 
 
-class QuickStartConfig(pydantic.BaseModel):
-    project_id: int
-    task_id: int
-    url: t.Optional[str]
-    notes: t.Optional[str]
+def get_harvest():
+    access_token = keyring.get_password("scythe", "access_token")
+    refresh_token = keyring.get_password("scythe", "refresh_token")
+
+    if not access_token or not refresh_token:
+        console.print("Please run [b]scythe init[/b] to authorize with Harvest.")
+        arc.exit(1)
+
+    harvest = Harvest(access_token, refresh_token)
+
+    @harvest.on_refresh
+    def on_refresh(access_token, refresh_token):
+        keyring.set_password("scythe", "access_token", access_token)
+        keyring.set_password("scythe", "refresh_token", refresh_token)
+
+    return harvest
 
 
-class Config(pydantic.BaseSettings):
-    token: str
-    account_id: str
-    user_id: str
-    quickstart: dict[str, QuickStartConfig]
-    cache_for: int = 60
-    autoload: list[str] = []
-
-
-class ScytheState(State):
-    config: Config
-    logger: Logger
-    cache: diskcache.Cache
-    console: Console
+def display_time(time: float):
+    minutes, seconds = divmod(time, 60)
+    hours, minutes = divmod(minutes, 60)
+    return f"{hours:02,.0f}:{minutes:02.0f}:{seconds:02.0f}"

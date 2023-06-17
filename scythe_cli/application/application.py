@@ -7,16 +7,18 @@ from arc.prompt import Prompt
 import keyring
 
 from scythe_cli.harvest import AsyncHarvest, Harvest, HarvestError
-from .console import console
-from . import utils
-
-from .quickstart import quickstart
+from ..console import console
+from .. import utils
 
 arc.configure(
     environment="development",
     debug=True,
     present=arc.PresentConfig(color=arc.ColorConfig(accent=color.fg.hex("#fa5d00"))),
+    version="1.0.0",
 )
+
+from scythe_cli.application import quickstart
+from scythe_cli.application import timers
 
 
 @arc.command("scythe")
@@ -75,7 +77,7 @@ def init(prompt: Prompt):
 
 @scythe.subcommand
 def projects():
-
+    """List all projects and tasks in your Harvest account."""
     with utils.get_harvest() as harvest, console.status("Fetching projects..."):
         projects = harvest.get_user_projects()
 
@@ -96,4 +98,5 @@ def handle_api_error(ctx, ex: HarvestError):
     )
 
 
-scythe.subcommand(quickstart, "qs")
+scythe.subcommand(quickstart.quickstart, "qs")
+scythe.subcommand(timers.timer, "t")

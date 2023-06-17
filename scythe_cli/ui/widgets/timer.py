@@ -8,6 +8,7 @@ from textual.reactive import reactive
 from time import monotonic
 
 from scythe_cli.harvest import AsyncHarvest, TimeEntry
+from scythe_cli import utils
 
 
 class TimeDisplay(Static):
@@ -27,9 +28,7 @@ class TimeDisplay(Static):
 
     def watch_time(self, time: float) -> None:
         """Called when the time attribute changes."""
-        minutes, seconds = divmod(time, 60)
-        hours, minutes = divmod(minutes, 60)
-        self.update(f"{hours:02,.0f}:{minutes:02.0f}:{seconds:02.0f}")
+        return utils.display_time(time)
 
     def start(self) -> None:
         """Method to start (or resume) time updating."""
@@ -83,7 +82,7 @@ class Timer(Container, can_focus=True):
         with Horizontal(id="info"):
             yield Label(self.entry.project.name, id="project")
             yield Label(self.entry.task.name, id="task")
-            yield Label(self.entry.notes, id="description")
+            yield Label(self.entry.notes or "", id="description")
 
         yield TimeDisplay()
 

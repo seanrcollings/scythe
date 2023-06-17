@@ -16,7 +16,7 @@ class TimeEntryTask(msgspec.Struct):
 
 class TimeEntry(msgspec.Struct):
     id: int
-    notes: str
+    notes: str | None
     hours: float
     is_running: bool
 
@@ -279,9 +279,26 @@ class Harvest:
             type=TimeEntryResponse,
         ).time_entries
 
-    @classmethod
-    def get(cls):
-        ...
+    @refresh
+    def get_running_time_entry(self) -> t.Optional[TimeEntry]:
+        response = check(
+            self.client.get(
+                "time_entries",
+                params={
+                    "is_running": "true",
+                },
+            )
+        )
+
+        entries = msgspec.json.decode(
+            response.content,
+            type=TimeEntryResponse,
+        ).time_entries
+
+        if len(entries) == 0:
+            return None
+
+        return entries[0]
 
     def _refresh(self):
         response = check(

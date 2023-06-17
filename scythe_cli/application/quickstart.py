@@ -6,8 +6,8 @@ import msgspec
 from arc.prompt import Prompt
 
 from scythe_cli import constants
-from scythe_cli.application import utils
-from scythe_cli.application.console import console
+from scythe_cli import utils
+from scythe_cli.console import console
 
 
 class QuickStartEntry(msgspec.Struct):
@@ -18,7 +18,15 @@ class QuickStartEntry(msgspec.Struct):
 
 
 @arc.command
-def quickstart(prompt: Prompt, name: str, no_exec: bool = arc.Flag(short="n")):
+def quickstart(
+    prompt: Prompt,
+    name: str,
+    no_exec: bool = arc.Flag(
+        short="n",
+        desc="Don't execute the command for the entry after starting the timer.",
+    ),
+):
+    """Start a timer with a predefined project, task, and notes."""
     with constants.QUICKSTART_DATA.open() as f:
         config = msgspec.json.decode(f.read(), type=dict[str, QuickStartEntry])
 
@@ -47,6 +55,8 @@ def quickstart(prompt: Prompt, name: str, no_exec: bool = arc.Flag(short="n")):
         console.print(f"[grey35]$ {template.exec}")
         subprocess.run(template.exec, shell=True, check=True)
 
+    console.print("[green]✓ Timer started!")
+
 
 @quickstart.use
 def ensure_quickstart_file(ctx: arc.Context):
@@ -60,6 +70,7 @@ def ensure_quickstart_file(ctx: arc.Context):
 def add(
     prompt: Prompt, name: str = arc.Argument(prompt="Quickstart entry name: ")
 ) -> None:
+    """Add a new quickstart entry."""
     with constants.QUICKSTART_DATA.open() as f:
         config = msgspec.json.decode(f.read(), type=dict[str, QuickStartEntry])
 
@@ -78,9 +89,18 @@ def add(
 
     task = project.task_assignments[idx]
 
-    notes = prompt.input("Notes: ")
+    notes: None | str = prompt.input("Notes: ", default="")
 
-    exec = prompt.input("Command to execute after timer is created: ")
+    match prompt.select(
+        "You entered no note, do you want to:",
+        ["Enter a note each time you start a timer", "Don't add a note to the timer"],
+    ):
+        case (0, _):
+            notes = None
+        case (1, _):
+            notes = ""
+
+    exec = prompt.input("Command to execute after timer is created: ", default="")
 
     config[name] = QuickStartEntry(
         project=project.project.id,
@@ -95,6 +115,7 @@ def add(
 
 @quickstart.subcommand
 def remove(prompt: Prompt, name: str):
+    """Remove a quickstart entry."""
     with constants.QUICKSTART_DATA.open() as f:
         config = msgspec.json.decode(f.read(), type=dict[str, QuickStartEntry])
 
