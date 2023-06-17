@@ -1,3 +1,4 @@
+import functools
 import typing as t
 import httpx
 import msgspec
@@ -60,7 +61,7 @@ class HarvestError(httpx.HTTPError):
 
 
 def check(response: httpx.Response) -> httpx.Response:
-    if response.status_code > 299:
+    if not response.is_success:
         raise HarvestError(
             f"Request failed with status code {response.status_code}",
             response,
@@ -69,19 +70,32 @@ def check(response: httpx.Response) -> httpx.Response:
     return response
 
 
-class AsyncHarvest:
-    def __init__(self, token: str, account_id: str):
-        self.token = token
-        self.account_id = account_id
+def arefresh(func: t.Callable[..., t.Awaitable[t.Any]]):
+    @functools.wraps(func)
+    async def inner(inst: "AsyncHarvest", *args, **kwargs):
+        try:
+            return await func(inst, *args, **kwargs)
+        except HarvestError as e:
+            if e.response.status_code == 401:
+                await inst._refresh()
+                return await func(inst, *args, **kwargs)
+            else:
+                raise e
 
+    return inner
+
+
+class AsyncHarvest:
+    def __init__(self, access_token: str, refresh_token: str):
         self.client = httpx.AsyncClient(
             base_url=f"https://api.harvestapp.com/api/v2/",
             headers={
-                "Harvest-Account-Id": account_id,
-                "Authorization": f"Bearer {token}",
                 "User-Agent": "Scythe CLI (seanrcollings@gmail.com)",
             },
         )
+
+        self.access_token = access_token
+        self.refresh_token = refresh_token
 
     async def __aenter__(self):
         await self.client.__aenter__()
@@ -90,27 +104,44 @@ class AsyncHarvest:
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.client.__aexit__(exc_type, exc_value, traceback)
 
+    @property
+    def access_token(self):
+        return self._access_token
+
+    @access_token.setter
+    def access_token(self, value: str):
+        self._access_token = value
+        self.client.headers["Authorization"] = f"Bearer {value}"
+
+    def on_refresh(self, func: t.Callable[[str, str], None]):
+        self._on_refresh = func
+
     async def close(self):
         await self.client.aclose()
 
+    @arefresh
     async def create_timer(self, data: t.Mapping[str, t.Any]) -> TimeEntry:
         response = check(await self.client.post("time_entries", json=data))
         return msgspec.json.decode(response.content, type=TimeEntry)
 
+    @arefresh
     async def start_timer(self, id: int) -> TimeEntry:
         response = check(await self.client.patch(f"time_entries/{id}/restart"))
         return msgspec.json.decode(response.content, type=TimeEntry)
 
+    @arefresh
     async def stop_timer(self, id: int) -> TimeEntry:
         response = check(await self.client.patch(f"time_entries/{id}/stop"))
         return msgspec.json.decode(response.content, type=TimeEntry)
 
+    @arefresh
     async def get_user_projects(self) -> list[ProjectAssignment]:
         response = check(await self.client.get(f"users/me/project_assignments"))
         return msgspec.json.decode(
             response.content, type=ProjectAssignmentResponse
         ).project_assignments
 
+    @arefresh
     async def get_time_entries(
         self, params: t.Mapping[str, str] | None = None
     ) -> list[TimeEntry]:
@@ -125,20 +156,61 @@ class AsyncHarvest:
             type=TimeEntryResponse,
         ).time_entries
 
+    @arefresh
+    async def get_user(self) -> User:
+        response = check(await self.client.get("users/me"))
+        return msgspec.json.decode(response.content, type=User)
+
+    async def _refresh(self):
+        response = check(
+            await self.client.post(
+                "https://scythe.seancollings.dev/refresh",
+                json={
+                    "refresh_token": self.refresh_token,
+                },
+            )
+        )
+
+        if not response.is_success:
+            raise HarvestError(
+                f"Faield to refresh token",
+                response,
+            )
+
+        data = response.json()
+        self.access_token = data["access_token"]
+
+        if hasattr(self, "_on_refresh"):
+            self._on_refresh(self.access_token, self.refresh_token)
+
+
+def refresh(func: t.Callable):
+    @functools.wraps(func)
+    def inner(inst: "Harvest", *args, **kwargs):
+        try:
+            return func(inst, *args, **kwargs)
+        except HarvestError as e:
+            if e.response.status_code == 401:
+                inst._refresh()
+                breakpoint()
+                return func(inst, *args, **kwargs)
+            else:
+                raise e
+
+    return inner
+
 
 class Harvest:
-    def __init__(self, token: str, account_id: str):
-        self.token = token
-        self.account_id = account_id
-
+    def __init__(self, access_token: str, refresh_token: str):
         self.client = httpx.Client(
             base_url=f"https://api.harvestapp.com/api/v2/",
             headers={
-                "Harvest-Account-Id": account_id,
-                "Authorization": f"Bearer {token}",
                 "User-Agent": "Scythe CLI (seanrcollings@gmail.com)",
             },
         )
+
+        self.access_token = access_token
+        self.refresh_token = refresh_token
 
     def __enter__(self):
         self.client.__enter__()
@@ -147,31 +219,49 @@ class Harvest:
     def __exit__(self, exc_type, exc_value, traceback):
         self.client.__exit__(exc_type, exc_value, traceback)
 
+    @property
+    def access_token(self):
+        return self._access_token
+
+    @access_token.setter
+    def access_token(self, value: str):
+        self._access_token = value
+        self.client.headers["Authorization"] = f"Bearer {value}"
+
+    def on_refresh(self, func: t.Callable[[str, str], None]):
+        self._on_refresh = func
+
     def close(self):
         self.client.close()
 
+    @refresh
     def create_timer(self, data: t.Mapping[str, t.Any]) -> TimeEntry:
         response = check(self.client.post("time_entries", json=data))
         return msgspec.json.decode(response.content, type=TimeEntry)
 
+    @refresh
     def start_timer(self, id: int) -> TimeEntry:
         response = check(self.client.patch(f"time_entries/{id}/restart"))
         return msgspec.json.decode(response.content, type=TimeEntry)
 
+    @refresh
     def stop_timer(self, id: int) -> TimeEntry:
         response = check(self.client.patch(f"time_entries/{id}/stop"))
         return msgspec.json.decode(response.content, type=TimeEntry)
 
+    @refresh
     def get_user(self) -> User:
         response = check(self.client.get("users/me"))
         return msgspec.json.decode(response.content, type=User)
 
+    @refresh
     def get_user_projects(self) -> list[ProjectAssignment]:
         response = check(self.client.get(f"users/me/project_assignments"))
         return msgspec.json.decode(
             response.content, type=ProjectAssignmentResponse
         ).project_assignments
 
+    @refresh
     def get_time_entries(
         self, params: t.Mapping[str, str] | None = None
     ) -> list[TimeEntry]:
@@ -185,3 +275,25 @@ class Harvest:
             response.content,
             type=TimeEntryResponse,
         ).time_entries
+
+    def _refresh(self):
+        response = check(
+            self.client.post(
+                "https://scythe.seancollings.dev/refresh",
+                json={
+                    "refresh_token": self.refresh_token,
+                },
+            )
+        )
+
+        if not response.is_success:
+            raise HarvestError(
+                f"Faield to refresh token",
+                response,
+            )
+
+        data = response.json()
+        self.access_token = data["access_token"]
+
+        if hasattr(self, "_on_refresh"):
+            self._on_refresh(self.access_token, self.refresh_token)

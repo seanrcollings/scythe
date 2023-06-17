@@ -28,15 +28,14 @@ class ScytheApp(App):
 
     def __init__(
         self,
-        config: Config,
+        harvest: AsyncHarvest,
         driver_class: Type[Driver] | None = None,
         css_path: CSSPathType | None = None,
         watch_css: bool = False,
     ):
         super().__init__(driver_class, css_path, watch_css)
         self.current_day = datetime.datetime.now()
-        self.config = config
-        self.harvest = AsyncHarvest(config.token, config.account_id)
+        self.harvest = harvest
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -46,7 +45,7 @@ class ScytheApp(App):
             yield Actions(id="header")
             yield TimerContainer(harvest=self.harvest, id="timers")
 
-        yield NewTimerModal(harvest=self.harvest, user_id=self.config.user_id)
+        yield NewTimerModal(harvest=self.harvest)
 
     async def action_quit(self):
         await self.harvest.close()
@@ -96,8 +95,3 @@ class ScytheApp(App):
 
 class AddQuickLaunchEntry(App):
     ...
-
-
-if __name__ == "__main__":
-    app = ScytheApp(config=Config.load(constants.CONFIG_FILE))
-    app.run()

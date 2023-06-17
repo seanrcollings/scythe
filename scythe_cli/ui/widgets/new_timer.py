@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Iterable
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal
@@ -19,10 +18,9 @@ class NewTimerModal(Vertical):
 
             super().__init__()
 
-    def __init__(self, harvest: AsyncHarvest, user_id: str, **kwargs):
+    def __init__(self, harvest: AsyncHarvest, **kwargs):
         super().__init__(**kwargs)
         self.harvest = harvest
-        self.user_id = user_id
 
     def compose(self) -> ComposeResult:
         with Vertical(id="body"):
@@ -87,7 +85,7 @@ class NewTimerModal(Vertical):
                 "project_id": data["project"],
                 "task_id": data["task"],
                 "notes": data["note"],
-                "spent_date": datetime.now().strftime("%Y-%m-%d"),
+                "spent_date": self.app.current_day.strftime("%Y-%m-%d"),
             }
         )
         return timer
