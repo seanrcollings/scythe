@@ -14,7 +14,7 @@ arc.configure(
     environment="development",
     debug=True,
     present=arc.PresentConfig(color=arc.ColorConfig(accent=color.fg.hex("#fa5d00"))),
-    version="1.0.0",
+    version="1.0.1",
 )
 
 from scythe_cli.application import quickstart
