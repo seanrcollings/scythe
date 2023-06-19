@@ -53,3 +53,12 @@ TimerModal #actions #action-buttons {
 TimerModal #actions #save {
   margin-left: 4;
 }
+
+TimerModal #actions #delete {
+  margin-left: 4;
+  display: none;
+}
+
+TimerModal.edit #actions #delete {
+  display: block;
+}

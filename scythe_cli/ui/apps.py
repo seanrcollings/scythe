@@ -64,6 +64,18 @@ class ScytheApp(App):
         container = self.query_one(TimerContainer)
         await container.add_timer(event.entry)
 
+    @on(TimerModal.UpdateTimer)
+    async def on_update_timer(self, event: TimerModal.UpdateTimer):
+        self.close_new_modal()
+        container = self.query_one(TimerContainer)
+        await container.update_timer(event.entry)
+
+    @on(TimerModal.DeleteTimer)
+    async def on_delete_timer(self, event: TimerModal.DeleteTimer):
+        self.close_new_modal()
+        container = self.query_one(TimerContainer)
+        await container.delete_timer(event.entry)
+
     @on(TimerContainer.ChangeDay)
     async def on_back(self, event: TimerContainer.ChangeDay):
         self.current_day = event.day

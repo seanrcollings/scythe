@@ -1,28 +1,12 @@
 from __future__ import annotations
+import re
 import typing as t
-import math
 
 import arc
 import keyring
 
 from scythe_cli.console import console
 from scythe_cli.harvest import Harvest, AsyncHarvest
-
-
-def get_hours_and_minutes(val: float) -> tuple[int, int]:
-    minutes, hours = math.modf(val)
-    minutes = math.ceil(round(minutes, 2) * 60)
-    hours = int(hours)
-    return hours, minutes
-
-
-def get_seconds(hours: float) -> float:
-    return hours * 60 * 60
-
-
-def fmt_time(hours: int, minutes: int) -> str:
-    minutes_str = str(minutes) if minutes >= 10 else f"0{minutes}"
-    return f"{hours}:{minutes_str}"
 
 
 def _get_harvest(async_harvest: bool = False):
@@ -58,6 +42,7 @@ def get_async_harvest() -> AsyncHarvest:
 def display_time(
     time: float, precision: t.Literal["hours", "minutes", "seconds"] = "seconds"
 ) -> str:
+    """Converts a float representing seconds to a string with a given precision."""
     minutes, seconds = divmod(time, 60)
     hours, minutes = divmod(minutes, 60)
 
@@ -68,3 +53,25 @@ def display_time(
             return f"{hours:02.0f}:{minutes:02.0f}"
         case "seconds":
             return f"{hours:02.0f}:{minutes:02.0f}:{seconds:02.0f}"
+
+
+def convert_time(time: str) -> float:
+    """Converts a string to a float representing hours.
+
+    Examples:
+        >>> convert_time("1:30")
+        1.5
+        >>> convert_time(":30")
+        0.5
+    """
+    if time.startswith(":"):
+        time = time[1:]
+        return int(time) / 60
+    elif ":" not in time or time.endswith(":"):
+        time = time.strip(":")
+        return float(time)
+    else:
+        hours_str, minutes_str = time.split(":")
+        hours = int(hours_str)
+        minutes = int(minutes_str)
+        return hours + (minutes / 60)

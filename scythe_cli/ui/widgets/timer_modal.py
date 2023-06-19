@@ -5,6 +5,7 @@ from textual.containers import Vertical, Horizontal
 from textual.widgets import Input, Select, Button, Label
 from textual.message import Message
 from textual.reactive import reactive
+from scythe_cli import utils
 
 from scythe_cli.harvest import AsyncHarvest, TimeEntry
 from scythe_cli.utils import display_time
@@ -15,6 +16,18 @@ class TimerModal(Vertical):
         ...
 
     class NewTimer(Message):
+        def __init__(self, entry: TimeEntry):
+            self.entry = entry
+
+            super().__init__()
+
+    class UpdateTimer(Message):
+        def __init__(self, entry: TimeEntry):
+            self.entry = entry
+
+            super().__init__()
+
+    class DeleteTimer(Message):
         def __init__(self, entry: TimeEntry):
             self.entry = entry
 
@@ -42,6 +55,7 @@ class TimerModal(Vertical):
             with Horizontal(id="actions"):
                 with Horizontal(id="action-buttons"):
                     yield Button("Cancel", id="cancel")
+                    yield Button("Delete", id="delete", variant="error")
                     yield Button("Save", id="save", variant="primary")
 
     async def on_mount(self) -> None:
@@ -73,6 +87,8 @@ class TimerModal(Vertical):
         hours_input = self.query_one("#hours", Input)
         hours_input.value = display_time(timer.seconds(), "minutes")
 
+        self.add_class("edit")
+
     def on_select_changed(self, event: Select.Changed):
         if not event.control:
             return
@@ -90,7 +106,6 @@ class TimerModal(Vertical):
 
         tasks_select = self.query_one("#task", Select)
         tasks_select.disabled = False
-        # TODO: why does the fail on the second selection?
         tasks_select.set_options(
             [(t.task.name, t.task.id) for t in project.task_assignments]
         )
@@ -107,19 +122,49 @@ class TimerModal(Vertical):
 
     @on(Button.Pressed, "#save")
     async def on_save(self, event: Button.Pressed) -> None:
-        timer = await self.create_timer()
-        self.post_message(self.NewTimer(timer))
+        if self.timer:
+            timer = await self.update_timer()
+            self.timer = None
+            self.remove_class("edit")
+            self.post_message(self.UpdateTimer(timer))
+        else:
+            timer = await self.create_timer()
+            self.post_message(self.NewTimer(timer))
+
         self.clear()
 
-    async def create_timer(self):
+    @on(Button.Pressed, "#delete")
+    async def on_delete(self, event: Button.Pressed) -> None:
+        if self.timer:
+            await self.harvest.delete_timer(self.timer.id)
+            self.remove_class("edit")
+            self.post_message(self.DeleteTimer(self.timer))
+            self.timer = None
+            self.clear()
+
+    async def create_timer(self) -> TimeEntry:
         data = self.data()
         timer = await self.harvest.create_timer(
             {
                 "project_id": data["project"],
                 "task_id": data["task"],
                 "notes": data["note"],
-                "spent_date": self.app.current_day.strftime("%Y-%m-%d"),
+                "spent_date": self.app.current_day.strftime("%Y-%m-%d"),  # type: ignore
             }
+        )
+        return timer
+
+    async def update_timer(self) -> TimeEntry:
+        assert self.timer
+        data = self.data()
+        timer = await self.harvest.update_timer(
+            self.timer.id,
+            {
+                "project_id": data["project"],
+                "task_id": data["task"],
+                "notes": data["note"],
+                "hours": utils.convert_time(data["hours"]),
+            },
         )
         return timer
 

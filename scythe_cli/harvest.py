@@ -125,6 +125,15 @@ class AsyncHarvest:
         return msgspec.json.decode(response.content, type=TimeEntry)
 
     @arefresh
+    async def update_timer(self, id: int, data: t.Mapping[str, t.Any]) -> TimeEntry:
+        response = check(await self.client.patch(f"time_entries/{id}", json=data))
+        return msgspec.json.decode(response.content, type=TimeEntry)
+
+    @arefresh
+    async def delete_timer(self, id: int) -> None:
+        check(await self.client.delete(f"time_entries/{id}"))
+
+    @arefresh
     async def start_timer(self, id: int) -> TimeEntry:
         response = check(await self.client.patch(f"time_entries/{id}/restart"))
         return msgspec.json.decode(response.content, type=TimeEntry)

@@ -8,7 +8,6 @@ from textual.widgets import LoadingIndicator, Static, Button
 from textual.reactive import reactive
 from textual.message import Message
 
-from scythe_cli.utils import get_seconds
 from scythe_cli.harvest import AsyncHarvest, TimeEntry
 
 from .timer import Timer, TimeDisplay
@@ -135,3 +134,11 @@ class TimerContainer(Widget):
     async def add_timer(self, entry: TimeEntry):
         timers = self.query(VerticalScroll).first()
         await timers.mount(Timer(entry=entry, harvest=self.harvest))
+
+    async def update_timer(self, entry: TimeEntry):
+        timer = self.query_one(f"#timer-{entry.id}", Timer)
+        timer.update_entry(entry)
+
+    async def delete_timer(self, entry: TimeEntry):
+        timer = self.query_one(f"#timer-{entry.id}", Timer)
+        timer.remove()

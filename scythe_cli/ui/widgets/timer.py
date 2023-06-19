@@ -1,8 +1,9 @@
+from anyio import TASK_STATUS_IGNORED
 from textual import on
 from textual.events import Key
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Container
-from textual.widgets import Static, Button, Label, ListView
+from textual.widgets import Static, Button, Label
 from textual.message import Message
 from textual.reactive import reactive
 from time import monotonic
@@ -73,15 +74,14 @@ class Timer(Container, can_focus=True):
         classes: str | None = None,
         disabled: bool = False,
     ) -> None:
-        self.entry = entry
-        self.harvest = harvest
-
         super().__init__(
             name=name,
             id=id,
             classes=classes,
             disabled=disabled,
         )
+        self.entry = entry
+        self.harvest = harvest
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="info"):
@@ -101,6 +101,20 @@ class Timer(Container, can_focus=True):
             self.start_timer()
 
         seconds = self.entry.seconds()
+        display = self.query_one(TimeDisplay)
+        display.time = seconds
+        display.total = seconds
+
+    def update_entry(self, entry: TimeEntry) -> None:
+        self.entry = entry
+        project_label = self.query_one("#project", Label)
+        project_label.update(entry.project.name)
+        task_label = self.query_one("#task", Label)
+        task_label.update(entry.task.name)
+        description_label = self.query_one("#description", Label)
+        description_label.update(entry.notes or "")
+
+        seconds = entry.seconds()
         display = self.query_one(TimeDisplay)
         display.time = seconds
         display.total = seconds
