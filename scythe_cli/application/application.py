@@ -1,18 +1,20 @@
 import typing as t
 import base64
 import webbrowser
+from importlib import metadata
+
+import keyring
 import arc
 from arc import color
 from arc.prompt import Prompt
-import keyring
 
-from scythe_cli.harvest import AsyncHarvest, Harvest, HarvestError
+from scythe_cli.harvest import Harvest, HarvestError
 from scythe_cli.console import console
 from scythe_cli import utils
 
 arc.configure(
     present=arc.PresentConfig(color=arc.ColorConfig(accent=color.fg.hex("#fa5d00"))),
-    version="1.0.2",
+    version=metadata.version("scythe-cli"),
 )
 
 from scythe_cli.application import quickstart

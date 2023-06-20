@@ -91,14 +91,18 @@ def add(
 
     notes: None | str = prompt.input("Notes: ", default="")
 
-    match prompt.select(
-        "You entered no note, do you want to:",
-        ["Enter a note each time you start a timer", "Don't add a note to the timer"],
-    ):
-        case (0, _):
-            notes = None
-        case (1, _):
-            notes = ""
+    if not notes:
+        match prompt.select(
+            "You entered no note, do you want to:",
+            [
+                "Enter a note each time you start a timer",
+                "Don't add a note to the timer",
+            ],
+        ):
+            case (0, _):
+                notes = None
+            case (1, _):
+                notes = ""
 
     exec = prompt.input("Command to execute after timer is created: ", default="")
 

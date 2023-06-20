@@ -67,3 +67,4 @@ scythe quickstart <name>
 
 This will start a timer with the details you entered when creating the quickstart entry and will execute the command you entered (if any).
 
+`
