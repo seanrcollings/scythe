@@ -3,6 +3,8 @@ import subprocess
 import typing as t
 import arc
 import msgspec
+from rich.markdown import Markdown
+
 from arc.prompt import Prompt
 
 from scythe_cli import constants
@@ -64,6 +66,25 @@ def ensure_quickstart_file(ctx: arc.Context):
         constants.QUICKSTART_DATA.parent.mkdir(parents=True, exist_ok=True)
         constants.QUICKSTART_DATA.touch()
         constants.QUICKSTART_DATA.write_text("{}")
+
+
+@quickstart.subcommand("list")
+def list_entries():
+    """List all quickstart entries"""
+
+    with constants.QUICKSTART_DATA.open() as f:
+        config = msgspec.json.decode(f.read(), type=dict[str, QuickStartEntry])
+
+    if not config:
+        console.print("No quickstart entries found.")
+        arc.exit(0)
+
+    for name, entry in config.items():
+        console.print(f"[bold]{name}[/bold]")
+        console.print(f"  Project: {entry.project}")
+        console.print(f"  Task: {entry.task}")
+        console.print(f"  Notes: {entry.notes}")
+        console.print(f"  Exec: {entry.exec}")
 
 
 @quickstart.subcommand
