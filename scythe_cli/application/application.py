@@ -19,6 +19,7 @@ arc.configure(
 
 from scythe_cli.application import quickstart
 from scythe_cli.application import timers
+from scythe_cli.application import stack
 
 
 @arc.command("scythe")
@@ -87,3 +88,4 @@ def handle_api_error(ctx, ex: HarvestError):
 
 scythe.subcommand(quickstart.quickstart, "qs")
 scythe.subcommand(timers.timer, "t")
+scythe.subcommand(stack.stackcmd, "s")

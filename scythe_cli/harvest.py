@@ -2,6 +2,9 @@ import functools
 import typing as t
 import httpx
 import msgspec
+from scythe_cli import constants
+
+from scythe_cli.stack import TimerStack
 
 
 class TimeEntryProject(msgspec.Struct):
@@ -96,6 +99,7 @@ class AsyncHarvest:
 
         self.access_token = access_token
         self.refresh_token = refresh_token
+        self.timer_stack = TimerStack(constants.STACK_DATA)
 
     async def __aenter__(self):
         await self.client.__aenter__()
@@ -118,11 +122,22 @@ class AsyncHarvest:
 
     async def close(self):
         await self.client.aclose()
+        self.timer_stack.save()
 
     @arefresh
     async def create_timer(self, data: t.Mapping[str, t.Any]) -> TimeEntry:
         response = check(await self.client.post("time_entries", json=data))
-        return msgspec.json.decode(response.content, type=TimeEntry)
+        entry = msgspec.json.decode(response.content, type=TimeEntry)
+        self.timer_stack.push(
+            {
+                "id": entry.id,
+                "project": entry.project.name,
+                "task": entry.task.name,
+                "notes": entry.notes,
+                "time": entry.seconds(),
+            }
+        )
+        return entry
 
     @arefresh
     async def update_timer(self, id: int, data: t.Mapping[str, t.Any]) -> TimeEntry:
@@ -133,15 +148,31 @@ class AsyncHarvest:
     async def delete_timer(self, id: int) -> None:
         check(await self.client.delete(f"time_entries/{id}"))
 
+        for idx, timer in enumerate(self.timer_stack):
+            if timer["id"] == id:
+                self.timer_stack.pop(idx)
+                break
+
     @arefresh
     async def start_timer(self, id: int) -> TimeEntry:
         response = check(await self.client.patch(f"time_entries/{id}/restart"))
-        return msgspec.json.decode(response.content, type=TimeEntry)
+        entry = msgspec.json.decode(response.content, type=TimeEntry)
+        self.timer_stack.push(
+            {
+                "id": entry.id,
+                "project": entry.project.name,
+                "task": entry.task.name,
+                "notes": entry.notes,
+                "time": entry.seconds(),
+            }
+        )
+        return entry
 
     @arefresh
     async def stop_timer(self, id: int) -> TimeEntry:
         response = check(await self.client.patch(f"time_entries/{id}/stop"))
-        return msgspec.json.decode(response.content, type=TimeEntry)
+        entry = msgspec.json.decode(response.content, type=TimeEntry)
+        return entry
 
     @arefresh
     async def get_user_projects(self) -> list[ProjectAssignment]:

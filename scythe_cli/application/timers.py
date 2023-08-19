@@ -63,4 +63,4 @@ def stop():
             arc.exit(0)
 
         harvest.stop_timer(timer.id)
-        console.print("[green]✓ Stopped timer!")
+        console.ok("Stopped timer!")
