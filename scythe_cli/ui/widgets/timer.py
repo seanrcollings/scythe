@@ -64,6 +64,10 @@ class Timer(Container, can_focus=True):
             self.timer = timer
             super().__init__()
 
+    BINDINGS = [
+        ("e", "edit_timer", "Edit Timer"),
+    ]
+
     def __init__(
         self,
         entry: TimeEntry,
@@ -131,6 +135,9 @@ class Timer(Container, can_focus=True):
 
     @on(Button.Pressed, "#edit")
     async def on_edit(self, event):
+        self.action_edit_timer()
+
+    def action_edit_timer(self):
         self.post_message(self.Edit(self))
 
     def on_key(self, event: Key):
@@ -147,10 +154,10 @@ class Timer(Container, can_focus=True):
         self.add_class("running")
         display = self.query_one(TimeDisplay)
         display.start()
-        # self.post_message(self.Started(self))
+        self.post_message(self.Started(self))
 
     def stop_timer(self):
         self.remove_class("running")
         display = self.query_one(TimeDisplay)
         display.stop()
-        # self.post_message(self.Stopped(self))
+        self.post_message(self.Stopped(self))

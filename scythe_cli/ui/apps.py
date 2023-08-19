@@ -18,7 +18,7 @@ class ScytheApp(App):
     TITLE = "Scythe"
     BINDINGS = [
         ("q", "quit", "Quit"),
-        ("d", "toggle_dark", "Toggle dark mode"),
+        # ("d", "toggle_dark", "Toggle dark mode"),
         ("o", "open_harvest", "Open Harvest"),
         ("n", "open_new_modal", "New Timer"),
     ]

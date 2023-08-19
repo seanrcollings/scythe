@@ -133,7 +133,9 @@ class TimerContainer(Widget):
 
     async def add_timer(self, entry: TimeEntry):
         timers = self.query(VerticalScroll).first()
-        await timers.mount(Timer(entry=entry, harvest=self.harvest))
+        await timers.mount(
+            Timer(entry=entry, harvest=self.harvest, id=f"timer-{entry.id}")
+        )
 
     async def update_timer(self, entry: TimeEntry):
         timer = self.query_one(f"#timer-{entry.id}", Timer)
