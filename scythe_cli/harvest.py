@@ -235,7 +235,6 @@ def refresh(func: T) -> T:
         except HarvestError as e:
             if e.response.status_code == 401:
                 inst._refresh()
-                breakpoint()
                 return func(inst, *args, **kwargs)
             else:
                 raise e
