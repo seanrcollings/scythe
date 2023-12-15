@@ -1,3 +1,4 @@
+import asyncio
 import typing as t
 import base64
 import webbrowser
@@ -13,6 +14,8 @@ from scythe_cli.console import console
 from scythe_cli import utils
 
 arc.configure(
+    environment="development",
+    debug=True,
     present=arc.PresentConfig(color=arc.ColorConfig(accent=color.fg.hex("#fa5d00"))),
     version=metadata.version("scythe-cli"),
 )

@@ -22,11 +22,18 @@ class TimerStack:
     @cached_property
     def _stack(self) -> deque[StackEntry]:
         if not self.path.exists():
-            with self.path.open("w") as f:
-                json.dump([], f)
+            return deque()
 
-        with self.path.open("r+") as f:
-            return deque(json.load(f))
+        with self.path.open("r") as f:
+            contents = f.read()
+            if not contents:
+                return deque()
+
+            return deque(json.loads(contents))
+
+    @cached_property
+    def item_ids(self) -> t.Collection[int]:
+        return set(item["id"] for item in self._stack)
 
     def __iter__(self):
         return iter(self._stack)
@@ -50,8 +57,10 @@ class TimerStack:
         self.save()
 
     def push(self, entry: StackEntry):
-        if entry in self._stack:
-            self._stack.remove(entry)
+        if entry["id"] in self.item_ids:
+            self._stack.remove(
+                [item for item in self._stack if item["id"] == entry["id"]][0]
+            )
 
         if len(self._stack) >= self.max_size:
             self._stack.pop()

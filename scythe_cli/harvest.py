@@ -93,7 +93,7 @@ class AsyncHarvest:
         self.client = httpx.AsyncClient(
             base_url=f"https://api.harvestapp.com/api/v2/",
             headers={
-                "User-Agent": "Scythe CLI (seanrcollings@gmail.com)",
+                "User-Agent": "Scythe CLI (scythe@seancollings.dev)",
             },
         )
 
