@@ -43,7 +43,7 @@ class ScytheApp(App):
             yield Actions(id="header")
             yield TimerContainer(harvest=self.harvest, id="timers")
 
-        yield TimerModal(harvest=self.harvest)
+        # yield TimerModal(harvest=self.harvest)
 
     async def action_quit(self):
         await self.harvest.close()
@@ -53,26 +53,18 @@ class ScytheApp(App):
     async def on_new(self, event: Button.Pressed):
         await self.run_action("open_new_modal")
 
-    @on(TimerModal.Cancel)
-    async def on_cancel(self, event: TimerModal.Cancel):
-        self.close_new_modal()
-        self.query_one("#new").focus()
-
     @on(TimerModal.NewTimer)
     async def on_new_timer(self, event: TimerModal.NewTimer):
-        self.close_new_modal()
         container = self.query_one(TimerContainer)
         await container.add_timer(event.entry)
 
     @on(TimerModal.UpdateTimer)
     async def on_update_timer(self, event: TimerModal.UpdateTimer):
-        self.close_new_modal()
         container = self.query_one(TimerContainer)
         await container.update_timer(event.entry)
 
     @on(TimerModal.DeleteTimer)
     async def on_delete_timer(self, event: TimerModal.DeleteTimer):
-        self.close_new_modal()
         container = self.query_one(TimerContainer)
         await container.delete_timer(event.entry)
 
@@ -82,9 +74,7 @@ class ScytheApp(App):
 
     @on(Timer.Edit)
     async def on_edit(self, event: Timer.Edit):
-        modal = self.query_one(TimerModal)
-        modal.timer = event.timer.entry
-        await self.run_action("open_new_modal")
+        self.push_screen(TimerModal(harvest=self.harvest, timer=event.timer.entry))
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
@@ -95,19 +85,7 @@ class ScytheApp(App):
         webbrowser.open("https://atomicjolt.harvestapp.com")
 
     def action_open_new_modal(self):
-        modal = self.query_one(TimerModal)
-        modal.add_class("open")
-        modal.query_one("#project").focus()
-
-        main = self.query_one("#main")
-        main.disabled = True
-
-    def close_new_modal(self):
-        modal = self.query_one(TimerModal)
-        modal.remove_class("open")
-
-        main = self.query_one("#main")
-        main.disabled = False
+        self.push_screen(TimerModal(harvest=self.harvest))
 
 
 if __name__ == "__main__":

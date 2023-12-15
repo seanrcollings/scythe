@@ -6,10 +6,10 @@ Scythe is a TUI and set of CLI utilties for interacting with the Harvest Time tr
 
 ## Installation
 
-Installable via pip
+Installable via pip/pipx (pipx is recommended)
 
 ```
-pip install scythe-cli
+pipx install scythe-cli
 ```
 
 ## Setup

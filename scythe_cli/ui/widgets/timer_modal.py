@@ -1,5 +1,6 @@
 from datetime import datetime
 from textual import on, work
+from textual.screen import Screen
 from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal
 from textual.widgets import Input, Select, Button, Label
@@ -11,10 +12,7 @@ from scythe_cli.harvest import AsyncHarvest, TimeEntry
 from scythe_cli.utils import display_time
 
 
-class TimerModal(Vertical):
-    class Cancel(Message):
-        ...
-
+class TimerModal(Screen):
     class NewTimer(Message):
         def __init__(self, entry: TimeEntry):
             self.entry = entry
@@ -37,11 +35,12 @@ class TimerModal(Vertical):
         ("escape", "cancel", "Cancel"),
     ]
 
-    timer = reactive[TimeEntry | None](None)
+    # timer = reactive[TimeEntry | None](None)
 
-    def __init__(self, harvest: AsyncHarvest, **kwargs):
+    def __init__(self, harvest: AsyncHarvest, timer: TimeEntry | None = None, **kwargs):
         super().__init__(**kwargs)
         self.harvest = harvest
+        self.timer = timer
 
     def compose(self) -> ComposeResult:
         with Vertical(id="body"):
@@ -69,6 +68,11 @@ class TimerModal(Vertical):
             [(p.project.name, p.project.id) for p in self.projects if p.is_active]
         )
 
+        if self.timer:
+            projects_select.value = self.timer.project.id
+
+            self.watch_timer(self.timer)
+
     def watch_timer(self, timer: TimeEntry | None) -> None:
         if not timer:
             return
@@ -93,7 +97,7 @@ class TimerModal(Vertical):
         if not event.control:
             return
 
-        if event.control.id == "project":
+        if event.control.id == "project":  # type: ignore
             self.on_project_changed(event)
 
     def on_project_changed(self, event: Select.Changed):
@@ -111,14 +115,11 @@ class TimerModal(Vertical):
         )
 
     def action_cancel(self):
-        self.post_message(self.Cancel())
-        self.clear()
+        self.app.pop_screen()
 
     @on(Button.Pressed, "#cancel")
     async def on_cancel(self, event: Button.Pressed):
-        self.post_message(self.Cancel())
-        self.clear()
-        self.timer = None
+        self.app.pop_screen()
 
     @on(Button.Pressed, "#save")
     async def on_save(self, event: Button.Pressed) -> None:
@@ -127,11 +128,11 @@ class TimerModal(Vertical):
             self.timer = None
             self.remove_class("edit")
             self.post_message(self.UpdateTimer(timer))
+            self.app.pop_screen()
         else:
             timer = await self.create_timer()
             self.post_message(self.NewTimer(timer))
-
-        self.clear()
+            self.app.pop_screen()
 
     @on(Button.Pressed, "#delete")
     async def on_delete(self, event: Button.Pressed) -> None:
@@ -139,8 +140,7 @@ class TimerModal(Vertical):
             await self.harvest.delete_timer(self.timer.id)
             self.remove_class("edit")
             self.post_message(self.DeleteTimer(self.timer))
-            self.timer = None
-            self.clear()
+            self.app.pop_screen()
 
     async def create_timer(self) -> TimeEntry:
         data = self.data()

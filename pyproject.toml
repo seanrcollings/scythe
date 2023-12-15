@@ -16,6 +16,7 @@ textual = "^0.45.1"
 httpx = "^0.24.0"
 msgspec = "^0.15.1"
 keyring = "^23.13.1"
+hishel = "^0.0.20"
 
 [tool.poetry.group.dev.dependencies]
 types-toml = "^0.10.8.6"

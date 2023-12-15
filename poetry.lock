@@ -229,6 +229,22 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "hishel"
+version = "0.0.20"
+description = "Persistent cache implementation for httpx and httpcore"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+httpx = ">=0.22.0"
+
+[package.extras]
+redis = ["redis (==5.0.1)"]
+sqlite = ["anysqlite (>=0.0.5)"]
+yaml = ["pyyaml (==6.0.1)"]
+
+[[package]]
 name = "httpcore"
 version = "0.17.3"
 description = "A minimal low-level HTTP client."
@@ -794,7 +810,7 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "72768fe5eb63e35e418ee11d067e5351e8c888f3c554b7271c120c3e770eafc1"
+content-hash = "76334cc6bf924accc799b2e45258b1d217874447e6418b31707a2024311e7dfb"
 
 [metadata.files]
 aiohttp = [
@@ -1179,6 +1195,10 @@ frozenlist = [
 h11 = [
     {file = "h11-0.14.0-py3-none-any.whl", hash = "sha256:e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761"},
     {file = "h11-0.14.0.tar.gz", hash = "sha256:8f19fbbe99e72420ff35c00b27a34cb9937e902a8b810e2c88300c6f0a3b699d"},
+]
+hishel = [
+    {file = "hishel-0.0.20-py3-none-any.whl", hash = "sha256:a08caeb393602af7844d559fc78448c6825336368fb47136e014c4367af6b95e"},
+    {file = "hishel-0.0.20.tar.gz", hash = "sha256:74f7cfcf0a7c9ae1cf1dd5a876fc3024de281693b476c264aa41a6a8a7277265"},
 ]
 httpcore = [
     {file = "httpcore-0.17.3-py3-none-any.whl", hash = "sha256:c2789b767ddddfa2a5782e3199b2b7f6894540b17b16ec26b2c4d8e103510b87"},

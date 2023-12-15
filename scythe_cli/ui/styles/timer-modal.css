@@ -1,13 +1,6 @@
 TimerModal {
-  display: none;
-  width: 1fr;
-  height: 1fr;
-  layer: top;
-  opacity: 0;
-}
-
-TimerModal.open {
-  display: block;
+  align: center middle;
+  background: #00000080;
 }
 
 TimerModal #body {
@@ -15,7 +8,6 @@ TimerModal #body {
   margin: 5 10;
   padding: 0 1;
   background: $background-lighten-1;
-  border: tall $background;
   height: 25;
 }
 

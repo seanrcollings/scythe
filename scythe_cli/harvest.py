@@ -1,5 +1,6 @@
 import functools
 import typing as t
+import hishel
 import httpx
 import msgspec
 from scythe_cli import constants
@@ -90,11 +91,14 @@ def arefresh(func: t.Callable[..., t.Awaitable[t.Any]]):
 
 class AsyncHarvest:
     def __init__(self, access_token: str, refresh_token: str):
+        transport = httpx.AsyncHTTPTransport()
+        cached_transport = hishel.AsyncCacheTransport(transport=transport)
         self.client = httpx.AsyncClient(
             base_url=f"https://api.harvestapp.com/api/v2/",
             headers={
                 "User-Agent": "Scythe CLI (scythe@seancollings.dev)",
             },
+            transport=cached_transport,
         )
 
         self.access_token = access_token
