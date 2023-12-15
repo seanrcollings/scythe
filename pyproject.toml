@@ -11,7 +11,7 @@ homepage = "https://github.com/seanrcollings/scythe"
 python = "^3.10"
 requests = "^2.25.1"
 xdg = "^5.1.1"
-arc-cli = "^8.4.0"
+arc-cli = "^8.6.2"
 textual = {version = "^0.27.0"}
 httpx = "^0.24.0"
 msgspec = "^0.15.1"
@@ -19,7 +19,7 @@ keyring = "^23.13.1"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
-mypy = "^0.800"
+mypy = "^1.0"
 pylint = "^2.7.0"
 types-requests = "^2.27.7"
 types-PyYAML = "^6.0.3"

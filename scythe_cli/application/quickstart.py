@@ -9,7 +9,9 @@ from arc.prompt import Prompt
 
 from scythe_cli import constants
 from scythe_cli import utils
+from scythe_cli.application.dependencies import get_stack
 from scythe_cli.console import console
+from scythe_cli.stack import TimerStack
 
 
 class QuickStartEntry(msgspec.Struct):
@@ -27,6 +29,7 @@ def quickstart(
         short="n",
         desc="Don't execute the command for the entry after starting the timer.",
     ),
+    stack: TimerStack = arc.Depends(get_stack),
 ):
     """Start a timer with a predefined project, task, and notes."""
     with constants.QUICKSTART_DATA.open() as f:
@@ -44,12 +47,22 @@ def quickstart(
 
     with utils.get_harvest() as harvest:
         with console.status("Creating Timer..."):
-            harvest.create_timer(
+            entry = harvest.create_timer(
                 {
                     "project_id": template.project,
                     "task_id": template.task,
                     "notes": template.notes,
                     "spent_date": datetime.datetime.now().strftime("%Y-%m-%d"),
+                }
+            )
+
+            stack.push(
+                {
+                    "id": entry.id,
+                    "project": entry.project.name,
+                    "task": entry.task.name,
+                    "notes": entry.notes,
+                    "time": entry.seconds(),
                 }
             )
 
@@ -98,17 +111,13 @@ def add(
     with utils.get_harvest() as harvest:
         projects = harvest.get_user_projects()
 
-    idx, _ = prompt.select(
-        "Select a project:", [project.project.name for project in projects]
+    project = prompt.select(
+        "Select a project:", [(project, project.project.name) for project in projects]
     )
 
-    project = projects[idx]
-
-    idx, _ = prompt.select(
-        "Select a task:", [task.task.name for task in project.task_assignments]
+    task = prompt.select(
+        "Select a task:", [(task, task.task.name) for task in project.task_assignments]
     )
-
-    task = project.task_assignments[idx]
 
     notes: None | str = prompt.input("Notes: ", default="")
 
@@ -116,13 +125,13 @@ def add(
         match prompt.select(
             "You entered no note, do you want to:",
             [
-                "Enter a note each time you start a timer",
-                "Don't add a note to the timer",
+                ("each_time", "Enter a note each time you start a timer"),
+                ("no_note", "Don't add a note to the timer"),
             ],
         ):
-            case (0, _):
+            case "each_time":
                 notes = None
-            case (1, _):
+            case "no_note":
                 notes = ""
 
     exec = prompt.input("Command to execute after timer is created: ", default="")

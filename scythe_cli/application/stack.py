@@ -1,7 +1,8 @@
 import arc
 from rich.table import Table
 
-from scythe_cli import constants, utils
+from scythe_cli import utils
+from scythe_cli.application.dependencies import get_stack
 from scythe_cli.console import console
 from scythe_cli.stack import TimerStack
 
@@ -9,10 +10,6 @@ stackcmd = arc.namespace(
     "stack",
     desc="Each time a timer is started it is pushed onto the top of the timer stack. You can use this stack to start old timers",
 )
-
-
-def get_stack():
-    return TimerStack(constants.STACK_DATA)
 
 
 @stackcmd.subcommand("list", "l")
