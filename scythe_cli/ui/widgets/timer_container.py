@@ -9,28 +9,9 @@ from textual.reactive import reactive
 from textual.message import Message
 
 from scythe_cli.harvest import AsyncHarvest, TimeEntry
+from scythe_cli.ui.widgets.viewing_day import ViewingDay
 
 from .timer import Timer, TimeDisplay
-
-
-class ViewingDay(Widget):
-    class Back(Message):
-        ...
-
-    viewing_day: reactive[datetime] = reactive(datetime.now)
-
-    def render(self):
-        content = self.viewing_day.strftime("%Y-%m-%d")
-
-        if self.viewing_day.date() == datetime.now().date():
-            content += " [grey35](Today)[/grey35]"
-        else:
-            content += " [blue][@click='back'](Back to Today)[/][/blue]"
-
-        return content
-
-    def action_back(self):
-        self.post_message(self.Back())
 
 
 class TimerContainer(Widget):
@@ -96,24 +77,32 @@ class TimerContainer(Widget):
         if entries:
             await asyncio.wait(
                 [
-                    timers.mount(
-                        Timer(entry=entry, harvest=self.harvest, id=f"timer-{entry.id}")
-                    )
+                    timers.mount(Timer(entry=entry, id=f"timer-{entry.id}"))
                     for entry in entries
                 ]
             )
         else:
             await timers.mount(Static("No timers for today", id="no-timers"))
 
-    @on(Timer.Started)
-    def on_timer_started(self, event: Timer.Started):
+    @on(Timer.Start)
+    async def on_timer_started(self, event: Timer.Start):
+        await self.harvest.start_timer(event.timer.entry.id)
+        event.timer.running = True
+
         timers = self.query(Timer)
         for timer in timers:
             if timer.id != event.timer.id:
-                if timer.has_class("running"):
-                    timer.remove_class("running")
-                    display = timer.query_one(TimeDisplay)
-                    display.stop()
+                timer.running = False
+
+    @on(Timer.Stop)
+    async def on_timer_stopped(self, event: Timer.Stop):
+        await self.harvest.stop_timer(event.timer.entry.id)
+        event.timer.running = False
+
+    @on(Timer.Delete)
+    async def on_timer_deleted(self, event: Timer.Delete):
+        await self.harvest.delete_timer(event.timer.entry.id)
+        event.timer.remove()
 
     @on(Button.Pressed, "#yesterday")
     def on_yesterday(self, event: Button.Pressed):
@@ -133,9 +122,7 @@ class TimerContainer(Widget):
 
     async def add_timer(self, entry: TimeEntry):
         timers = self.query(VerticalScroll).first()
-        await timers.mount(
-            Timer(entry=entry, harvest=self.harvest, id=f"timer-{entry.id}")
-        )
+        await timers.mount(Timer(entry=entry, id=f"timer-{entry.id}"))
 
     async def update_timer(self, entry: TimeEntry):
         timer = self.query_one(f"#timer-{entry.id}", Timer)

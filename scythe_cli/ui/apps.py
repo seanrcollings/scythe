@@ -9,16 +9,16 @@ from textual.driver import Driver
 from textual.widgets import Footer, Header, Button
 from textual.containers import Vertical
 
-from scythe_cli.harvest import AsyncHarvest
+from scythe_cli.harvest import AsyncHarvest, TimeEntry
 from scythe_cli.ui.widgets import TimerContainer, Actions, TimerModal
 from scythe_cli.ui.widgets.timer import Timer
+from scythe_cli.ui.widgets.timer_modal import TimerModalAction
 
 
 class ScytheApp(App):
     TITLE = "Scythe"
     BINDINGS = [
         ("q", "quit", "Quit"),
-        # ("d", "toggle_dark", "Toggle dark mode"),
         ("o", "open_harvest", "Open Harvest"),
         ("n", "open_new_modal", "New Timer"),
     ]
@@ -53,28 +53,16 @@ class ScytheApp(App):
     async def on_new(self, event: Button.Pressed):
         await self.run_action("open_new_modal")
 
-    @on(TimerModal.NewTimer)
-    async def on_new_timer(self, event: TimerModal.NewTimer):
-        container = self.query_one(TimerContainer)
-        await container.add_timer(event.entry)
-
-    @on(TimerModal.UpdateTimer)
-    async def on_update_timer(self, event: TimerModal.UpdateTimer):
-        container = self.query_one(TimerContainer)
-        await container.update_timer(event.entry)
-
-    @on(TimerModal.DeleteTimer)
-    async def on_delete_timer(self, event: TimerModal.DeleteTimer):
-        container = self.query_one(TimerContainer)
-        await container.delete_timer(event.entry)
-
     @on(TimerContainer.ChangeDay)
     async def on_back(self, event: TimerContainer.ChangeDay):
         self.current_day = event.day
 
     @on(Timer.Edit)
     async def on_edit(self, event: Timer.Edit):
-        self.push_screen(TimerModal(harvest=self.harvest, timer=event.timer.entry))
+        self.push_screen(
+            TimerModal(harvest=self.harvest, timer=event.timer.entry),
+            callback=self.handle_timer_modal_close,
+        )
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
@@ -82,10 +70,28 @@ class ScytheApp(App):
 
     def action_open_harvest(self) -> None:
         """An action to open Harvest."""
+        # TODO - Make this configurable
         webbrowser.open("https://atomicjolt.harvestapp.com")
 
     def action_open_new_modal(self):
-        self.push_screen(TimerModal(harvest=self.harvest))
+        self.push_screen(
+            TimerModal(harvest=self.harvest), callback=self.handle_timer_modal_close
+        )
+
+    async def handle_timer_modal_close(
+        self, result: tuple[TimerModalAction, TimeEntry]
+    ):
+        self.console.log(f"Result: {result}")
+        action, entry = result
+        container = self.query_one(TimerContainer)
+
+        match action:
+            case TimerModalAction.NEW:
+                await container.add_timer(entry)
+            case TimerModalAction.EDIT:
+                await container.update_timer(entry)
+            case TimerModalAction.DELETE:
+                await container.delete_timer(entry)
 
 
 if __name__ == "__main__":

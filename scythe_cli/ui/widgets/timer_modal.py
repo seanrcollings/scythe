@@ -1,41 +1,28 @@
 from datetime import datetime
+import enum
 from textual import on, work
-from textual.screen import Screen
+from textual.screen import Screen, ModalScreen
 from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal
 from textual.widgets import Input, Select, Button, Label
 from textual.message import Message
-from textual.reactive import reactive
 from scythe_cli import utils
 
 from scythe_cli.harvest import AsyncHarvest, TimeEntry
 from scythe_cli.utils import display_time
 
 
-class TimerModal(Screen):
-    class NewTimer(Message):
-        def __init__(self, entry: TimeEntry):
-            self.entry = entry
+class TimerModalAction(enum.Enum):
+    NEW = "new"
+    EDIT = "edit"
+    DELETE = "delete"
 
-            super().__init__()
 
-    class UpdateTimer(Message):
-        def __init__(self, entry: TimeEntry):
-            self.entry = entry
-
-            super().__init__()
-
-    class DeleteTimer(Message):
-        def __init__(self, entry: TimeEntry):
-            self.entry = entry
-
-            super().__init__()
-
+class TimerModal(ModalScreen[tuple[TimerModalAction, TimeEntry]]):
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
+        ("ctrl+s", "save", "Save"),
     ]
-
-    # timer = reactive[TimeEntry | None](None)
 
     def __init__(self, harvest: AsyncHarvest, timer: TimeEntry | None = None, **kwargs):
         super().__init__(**kwargs)
@@ -117,6 +104,16 @@ class TimerModal(Screen):
     def action_cancel(self):
         self.app.pop_screen()
 
+    async def action_save(self):
+        if self.timer:
+            timer = await self.update_timer()
+            self.timer = None
+            self.remove_class("edit")
+            self.dismiss((TimerModalAction.EDIT, timer))
+        else:
+            timer = await self.create_timer()
+            self.dismiss((TimerModalAction.NEW, timer))
+
     @on(Button.Pressed, "#cancel")
     async def on_cancel(self, event: Button.Pressed):
         self.app.pop_screen()
@@ -127,20 +124,17 @@ class TimerModal(Screen):
             timer = await self.update_timer()
             self.timer = None
             self.remove_class("edit")
-            self.post_message(self.UpdateTimer(timer))
-            self.app.pop_screen()
+            self.dismiss((TimerModalAction.EDIT, timer))
         else:
             timer = await self.create_timer()
-            self.post_message(self.NewTimer(timer))
-            self.app.pop_screen()
+            self.dismiss((TimerModalAction.NEW, timer))
 
     @on(Button.Pressed, "#delete")
     async def on_delete(self, event: Button.Pressed) -> None:
         if self.timer:
             await self.harvest.delete_timer(self.timer.id)
             self.remove_class("edit")
-            self.post_message(self.DeleteTimer(self.timer))
-            self.app.pop_screen()
+            self.dismiss((TimerModalAction.DELETE, self.timer))
 
     async def create_timer(self) -> TimeEntry:
         data = self.data()

@@ -1,77 +1,43 @@
-from anyio import TASK_STATUS_IGNORED
 from textual import on
-from textual.events import Key
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Container
-from textual.widgets import Static, Button, Label
+from textual.widgets import Button, Label
 from textual.message import Message
 from textual.reactive import reactive
-from time import monotonic
 
 from scythe_cli.harvest import AsyncHarvest, TimeEntry
-from scythe_cli import utils
-
-
-class TimeDisplay(Static):
-    """A widget to display elapsed time."""
-
-    start_time: reactive[float] = reactive(monotonic)
-    time = reactive(0.0)
-    total = reactive(0.0)
-
-    def on_mount(self) -> None:
-        """Event handler called when widget is added to the app."""
-        self.update_timer = self.set_interval(1 / 60, self.update_time, pause=True)
-
-    def update_time(self) -> None:
-        """Method to update time to current."""
-        self.time = self.total + (monotonic() - self.start_time)
-
-    def watch_time(self, time: float) -> None:
-        """Called when the time attribute changes."""
-        self.update(utils.display_time(time))
-
-    def start(self) -> None:
-        """Method to start (or resume) time updating."""
-        self.start_time = monotonic()
-        self.update_timer.resume()
-
-    def stop(self) -> None:
-        """Method to stop the time display updating."""
-        self.update_timer.pause()
-        self.total += monotonic() - self.start_time
-        self.time = self.total
-
-    def reset(self) -> None:
-        """Method to reset the time display to zero."""
-        self.total = 0
-        self.time = 0
+from scythe_cli.ui.widgets.time_display import TimeDisplay
 
 
 class Timer(Container, can_focus=True):
-    class Started(Message):
+    class TimerMessage(Message):
         def __init__(self, timer: "Timer") -> None:
             self.timer = timer
             super().__init__()
 
-    class Stopped(Message):
-        def __init__(self, timer: "Timer") -> None:
-            self.timer = timer
-            super().__init__()
+    class Start(TimerMessage):
+        ...
 
-    class Edit(Message):
-        def __init__(self, timer: "Timer") -> None:
-            self.timer = timer
-            super().__init__()
+    class Stop(TimerMessage):
+        ...
+
+    class Edit(TimerMessage):
+        ...
+
+    class Delete(TimerMessage):
+        ...
 
     BINDINGS = [
         ("e", "edit_timer", "Edit Timer"),
+        ("d", "delete_timer", "Delete Timer"),
+        ("enter", "toggle_timer", "Toggle Timer"),
     ]
+
+    running: reactive[bool] = reactive(False)
 
     def __init__(
         self,
         entry: TimeEntry,
-        harvest: AsyncHarvest,
         *,
         name: str | None = None,
         id: str | None = None,
@@ -85,7 +51,6 @@ class Timer(Container, can_focus=True):
             disabled=disabled,
         )
         self.entry = entry
-        self.harvest = harvest
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="info"):
@@ -102,12 +67,46 @@ class Timer(Container, can_focus=True):
 
     def on_mount(self) -> None:
         if self.entry.is_running:
-            self.start_timer()
+            self.running = True
 
         seconds = self.entry.seconds()
         display = self.query_one(TimeDisplay)
         display.time = seconds
         display.total = seconds
+
+    def watch_running(self, running: bool) -> None:
+        if running:
+            self.add_class("running")
+            display = self.query_one(TimeDisplay)
+            display.start()
+        else:
+            self.remove_class("running")
+            display = self.query_one(TimeDisplay)
+            display.stop()
+
+    @on(Button.Pressed, "#start")
+    async def on_start(self, event):
+        self.post_message(self.Start(self))
+
+    @on(Button.Pressed, "#stop")
+    async def on_stop(self, event):
+        self.post_message(self.Stop(self))
+
+    @on(Button.Pressed, "#edit")
+    async def on_edit(self, event):
+        self.post_message(self.Edit(self))
+
+    def action_edit_timer(self):
+        self.post_message(self.Edit(self))
+
+    async def action_delete_timer(self):
+        self.post_message(self.Delete(self))
+
+    def action_toggle_timer(self):
+        if self.running:
+            self.post_message(self.Stop(self))
+        else:
+            self.post_message(self.Start(self))
 
     def update_entry(self, entry: TimeEntry) -> None:
         self.entry = entry
@@ -122,42 +121,3 @@ class Timer(Container, can_focus=True):
         display = self.query_one(TimeDisplay)
         display.time = seconds
         display.total = seconds
-
-    @on(Button.Pressed, "#start")
-    async def on_start(self, event):
-        await self.harvest.start_timer(self.entry.id)
-        self.start_timer()
-
-    @on(Button.Pressed, "#stop")
-    async def on_stop(self, event):
-        await self.harvest.stop_timer(self.entry.id)
-        self.stop_timer()
-
-    @on(Button.Pressed, "#edit")
-    async def on_edit(self, event):
-        self.action_edit_timer()
-
-    def action_edit_timer(self):
-        self.post_message(self.Edit(self))
-
-    def on_key(self, event: Key):
-        if event.key == "enter":
-            self.toggle_timer()
-
-    def toggle_timer(self):
-        if self.has_class("running"):
-            self.stop_timer()
-        else:
-            self.start_timer()
-
-    def start_timer(self):
-        self.add_class("running")
-        display = self.query_one(TimeDisplay)
-        display.start()
-        self.post_message(self.Started(self))
-
-    def stop_timer(self):
-        self.remove_class("running")
-        display = self.query_one(TimeDisplay)
-        display.stop()
-        self.post_message(self.Stopped(self))
