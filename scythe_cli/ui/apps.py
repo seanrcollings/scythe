@@ -16,7 +16,7 @@ from scythe_cli.ui.widgets.timer_modal import TimerModalAction
 
 
 class ScytheApp(App):
-    TITLE = "Scythe"
+    TITLE = "Scythe - Harvest in the terminal"
     BINDINGS = [
         ("q", "quit", "Quit"),
         ("o", "open_harvest", "Open Harvest"),
@@ -42,8 +42,6 @@ class ScytheApp(App):
         with Vertical(id="main"):
             yield Actions(id="header")
             yield TimerContainer(harvest=self.harvest, id="timers")
-
-        # yield TimerModal(harvest=self.harvest)
 
     async def action_quit(self):
         await self.harvest.close()

@@ -1,11 +1,9 @@
-from datetime import datetime
 import enum
 from textual import on, work
-from textual.screen import Screen, ModalScreen
+from textual.screen import ModalScreen
 from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal
 from textual.widgets import Input, Select, Button, Label
-from textual.message import Message
 from scythe_cli import utils
 
 from scythe_cli.harvest import AsyncHarvest, TimeEntry
@@ -20,7 +18,7 @@ class TimerModalAction(enum.Enum):
 
 class TimerModal(ModalScreen[tuple[TimerModalAction, TimeEntry]]):
     BINDINGS = [
-        ("escape", "cancel", "Cancel"),
+        ("escape,ctrl+q", "cancel", "Cancel"),
         ("ctrl+s", "save", "Save"),
     ]
 
@@ -107,12 +105,14 @@ class TimerModal(ModalScreen[tuple[TimerModalAction, TimeEntry]]):
     async def action_save(self):
         if self.timer:
             timer = await self.update_timer()
-            self.timer = None
-            self.remove_class("edit")
-            self.dismiss((TimerModalAction.EDIT, timer))
+            if timer:
+                self.timer = None
+                self.remove_class("edit")
+                self.dismiss((TimerModalAction.EDIT, timer))
         else:
             timer = await self.create_timer()
-            self.dismiss((TimerModalAction.NEW, timer))
+            if timer:
+                self.dismiss((TimerModalAction.NEW, timer))
 
     @on(Button.Pressed, "#cancel")
     async def on_cancel(self, event: Button.Pressed):
@@ -120,14 +120,7 @@ class TimerModal(ModalScreen[tuple[TimerModalAction, TimeEntry]]):
 
     @on(Button.Pressed, "#save")
     async def on_save(self, event: Button.Pressed) -> None:
-        if self.timer:
-            timer = await self.update_timer()
-            self.timer = None
-            self.remove_class("edit")
-            self.dismiss((TimerModalAction.EDIT, timer))
-        else:
-            timer = await self.create_timer()
-            self.dismiss((TimerModalAction.NEW, timer))
+        await self.run_action("save")
 
     @on(Button.Pressed, "#delete")
     async def on_delete(self, event: Button.Pressed) -> None:
@@ -136,8 +129,11 @@ class TimerModal(ModalScreen[tuple[TimerModalAction, TimeEntry]]):
             self.remove_class("edit")
             self.dismiss((TimerModalAction.DELETE, self.timer))
 
-    async def create_timer(self) -> TimeEntry:
+    async def create_timer(self) -> TimeEntry | None:
         data = self.data()
+        if any([not data["project"], not data["task"], not data["hours"]]):
+            return None
+
         timer = await self.harvest.create_timer(
             {
                 "project_id": data["project"],
@@ -148,9 +144,12 @@ class TimerModal(ModalScreen[tuple[TimerModalAction, TimeEntry]]):
         )
         return timer
 
-    async def update_timer(self) -> TimeEntry:
+    async def update_timer(self) -> TimeEntry | None:
         assert self.timer
         data = self.data()
+        if any([not data["project"], not data["task"], not data["hours"]]):
+            return None
+
         timer = await self.harvest.update_timer(
             self.timer.id,
             {
