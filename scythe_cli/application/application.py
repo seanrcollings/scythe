@@ -1,5 +1,5 @@
-import asyncio
 import typing as t
+import os
 import base64
 import webbrowser
 from importlib import metadata
@@ -8,14 +8,17 @@ import keyring
 import arc
 from arc import color
 from arc.prompt import Prompt
+from arc.typing import Env
 
 from scythe_cli.harvest import Harvest, HarvestError
 from scythe_cli.console import console
 from scythe_cli import utils
 
+env = t.cast(Env, os.environ.get("SCYTHE_ENV", "production"))
+
 arc.configure(
-    environment="development",
-    debug=True,
+    environment=env,
+    debug=env == "development",
     present=arc.PresentConfig(color=arc.ColorConfig(accent=color.fg.hex("#fa5d00"))),
     version=metadata.version("scythe-cli"),
 )
