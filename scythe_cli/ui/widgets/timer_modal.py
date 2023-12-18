@@ -131,7 +131,8 @@ class TimerModal(ModalScreen[tuple[TimerModalAction, TimeEntry]]):
 
     async def create_timer(self) -> TimeEntry | None:
         data = self.data()
-        if any([not data["project"], not data["task"], not data["hours"]]):
+        if any([not data["project"], not data["task"]]):
+            self.app.log(f"Missing Data, not creating timer: {data}")
             return None
 
         timer = await self.harvest.create_timer(
@@ -147,7 +148,8 @@ class TimerModal(ModalScreen[tuple[TimerModalAction, TimeEntry]]):
     async def update_timer(self) -> TimeEntry | None:
         assert self.timer
         data = self.data()
-        if any([not data["project"], not data["task"], not data["hours"]]):
+        if any([not data["project"], not data["task"]]):
+            self.app.log(f"Missing Data, not updating timer: {data}")
             return None
 
         timer = await self.harvest.update_timer(
